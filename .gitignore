@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.env
+*.db
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+*.log
+npm-debug.log*
+.cache/
+
+# Python / backend
+backend/venv/
+.venv/
+.pytest_cache/
+.mypy_cache/
+coverage/
+htmlcov/
+backend/instance/
+
+# IDE
+.vscode/
+.idea/
+.DS_Store

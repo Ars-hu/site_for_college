@@ -1,0 +1,24 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    container_name: konyaev-backend
+    environment:
+      SECRET_KEY: change-me-in-production
+      DATABASE_URL: sqlite:////app/instance/registrations.db
+    volumes:
+      - backend-data:/app/instance
+    expose:
+      - "5000"
+
+  frontend:
+    build:
+      context: .
+    container_name: konyaev-frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  backend-data:

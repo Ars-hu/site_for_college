@@ -1,0 +1,11 @@
+node_modules
+dist
+dist-ssr
+backend/venv
+backend/instance
+backend
+*.log
+.env
+.git
+.vscode
+.idea
