@@ -359,7 +359,7 @@ function CalendarAppView({
             <div key={d}>{d}</div>
           ))}
         </div>
-        <div className="mt-1 grid grid-cols-7 border border-gray-200 rounded-lg overflow-hidden">
+        <div className="mt-2 grid grid-cols-7 gap-2">
           {days.map((day) => {
             const outOfMonth = day.getMonth() !== month.getMonth();
             const apiDate = toApiDate(day);
@@ -367,43 +367,72 @@ function CalendarAppView({
             const isSelected = apiDate === selectedDate;
             const isToday = isSameDate(day, today);
 
+            const isWeekend = day.getDay() === 0 || day.getDay() === 6;
+            const hasApps = count > 0 && !outOfMonth;
+            const unavailable = outOfMonth || (isWeekend && !hasApps);
+
+            const bgBase = outOfMonth
+              ? "transparent"
+              : hasApps
+              ? "#bfdbfe"
+              : isWeekend
+              ? "#f3f4f6"
+              : "#fff";
+
+            const bgHover = unavailable ? bgBase : "#eff6ff";
+
             return (
               <button
                 key={day.toISOString()}
                 disabled={outOfMonth}
-                onClick={() => onDateSelect(isSelected ? null : apiDate)}
-                className="min-h-16 border-b border-r border-gray-200 p-1.5 text-left text-sm"
+                onClick={() => !unavailable ? onDateSelect(isSelected ? null : apiDate) : undefined}
+                className="aspect-square rounded-xl flex items-center justify-center border border-gray-200"
                 style={{
-                  background: isSelected
-                    ? BLUE_LIGHT
-                    : count > 0 && !outOfMonth
-                    ? "#fff8e1"
-                    : outOfMonth
-                    ? "#fafafa"
-                    : "#fff",
-                  cursor: outOfMonth ? "default" : "pointer",
-                  color: outOfMonth ? "#ccc" : "inherit",
-                  outline: isSelected ? `2px solid ${BLUE}` : "none",
-                  outlineOffset: "-2px",
+                  background: isSelected ? "#bfdbfe" : bgBase,
+                  cursor: unavailable ? "default" : "pointer",
+                  color: outOfMonth ? "transparent" : isWeekend && !hasApps ? "#bbb" : "inherit",
+                  borderColor: outOfMonth
+                    ? "transparent"
+                    : hasApps || isSelected
+                    ? "#93c5fd"
+                    : isWeekend
+                    ? "#e5e7eb"
+                    : undefined,
+                }}
+                onMouseEnter={(e) => {
+                  if (!unavailable) e.currentTarget.style.background = bgHover;
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = isSelected ? "#bfdbfe" : bgBase;
                 }}
               >
                 <span
-                  className="inline-grid h-6 w-6 place-items-center rounded-full text-xs font-semibold"
-                  style={isToday ? { background: BLUE, color: "#fff" } : {}}
+                  className="inline-grid h-9 w-9 place-items-center rounded-full text-base font-semibold"
+                  style={
+                    isToday && !hasApps && !isSelected
+                      ? { background: BLUE, color: "#fff" }
+                      : {}
+                  }
                 >
                   {day.getDate()}
                 </span>
-                {count > 0 && !outOfMonth && (
-                  <span
-                    className="block text-xs font-medium mt-0.5"
-                    style={{ color: BLUE }}
-                  >
-                    {count} зап.
-                  </span>
-                )}
               </button>
             );
           })}
+        </div>
+        <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-500">
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "#fff", border: "1px solid #e5e7eb" }} />
+            Без записей
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "#bfdbfe", border: "1px solid #93c5fd" }} />
+            Есть записи
+          </span>
+          <span className="flex items-center gap-1.5">
+            <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "#f3f4f6", border: "1px solid #e5e7eb" }} />
+            Запись невозможна
+          </span>
         </div>
       </div>
 

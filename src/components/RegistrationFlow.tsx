@@ -1,4 +1,4 @@
-import { Clock } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import { BLUE } from "../lib/constants";
 import type { AllowedMonth } from "../lib/api";
 import { Card } from "./Card";
@@ -53,11 +53,11 @@ export function RegistrationFlow({
 
       {step === "date" && (
         <div
-          className="flex items-start gap-3 px-5 py-4 border-b border-gray-100"
+          className="flex items-center gap-3 px-5 py-4 border-b border-gray-100"
           style={{ background: "#f8fafc" }}
         >
-          <Clock className="h-5 w-5 mt-0.5 shrink-0" style={{ color: BLUE }} />
-          <ol className="flex flex-wrap gap-x-6 gap-y-1 text-sm text-gray-600">
+          <BookOpen className="h-5 w-5 shrink-0" style={{ color: BLUE }} />
+          <ol className="flex flex-col gap-1 text-sm text-gray-600">
             <li>1. Выберите доступную дату в календаре.</li>
             <li>2. Выберите удобное время записи.</li>
             <li>3. Укажите ФИО и контактные данные.</li>

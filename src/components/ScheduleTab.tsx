@@ -156,7 +156,7 @@ export function ScheduleTab({
             <div key={d}>{d}</div>
           ))}
         </div>
-        <div className="mt-1 grid grid-cols-7 border border-gray-200 rounded-lg overflow-hidden">
+        <div className="mt-2 grid grid-cols-7 gap-2">
           {days.map((day) => {
             const outOfMonth = day.getMonth() !== month.getMonth();
             const apiDate = toApiDate(day);
@@ -168,22 +168,22 @@ export function ScheduleTab({
             const isOpenedWeekend = isWeekend && openedWeekendsSet.has(apiDate);
 
             let bg = "#fff";
-            if (outOfMonth) bg = "#fafafa";
+            if (outOfMonth) bg = "transparent";
             else if (isSelected) bg = BLUE_LIGHT;
             else if (isOpenedWeekend) bg = "#e8f5e9";
-            else if (blocked) bg = "#f0f0f0";
-            else if (isWeekend) bg = "#fafafa";
+            else if (blocked) bg = "#f3f4f6";
+            else if (isWeekend) bg = "#f3f4f6";
 
             return (
               <button
                 key={day.toISOString()}
                 disabled={outOfMonth}
                 onClick={() => !outOfMonth && handleDayClick(apiDate)}
-                className="min-h-16 border-b border-r border-gray-200 p-1.5 text-left text-sm"
+                className="aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 border border-gray-200"
                 style={{
                   background: bg,
                   color: outOfMonth
-                    ? "#ddd"
+                    ? "transparent"
                     : isPast
                     ? "#aaa"
                     : blocked
@@ -192,21 +192,22 @@ export function ScheduleTab({
                     ? "#bbb"
                     : "#222",
                   cursor: outOfMonth ? "default" : "pointer",
+                  borderColor: outOfMonth ? "transparent" : isSelected ? BLUE : undefined,
                   outline: isSelected ? `2px solid ${BLUE}` : "none",
                   outlineOffset: "-2px",
                 }}
               >
                 <span
-                  className="inline-grid h-6 w-6 place-items-center rounded-full text-xs font-semibold"
+                  className="inline-grid h-9 w-9 place-items-center rounded-full text-base font-semibold"
                   style={isToday ? { background: BLUE, color: "#fff" } : {}}
                 >
                   {day.getDate()}
                 </span>
                 {blocked && !outOfMonth && (
-                  <span className="block text-xs text-gray-400">закрыто</span>
+                  <span className="text-xs text-gray-400 leading-none">закрыто</span>
                 )}
                 {isOpenedWeekend && !outOfMonth && (
-                  <span className="block text-xs font-medium text-green-700">открыт</span>
+                  <span className="text-xs font-medium text-green-700 leading-none">открыт</span>
                 )}
               </button>
             );
