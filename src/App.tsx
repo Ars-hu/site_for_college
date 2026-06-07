@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Toaster } from "react-hot-toast";
 import { CalendarDays, ChevronRight, FileText, Phone, X } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { getDatesStatus, getAllowedMonths } from "./lib/api";
 import type { AllowedMonth } from "./lib/api";
 import { BLUE } from "./lib/constants";
@@ -12,7 +13,8 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 type Step = "date" | "time" | "form";
 
 export default function App() {
-  const [mode, setMode] = useState<"registration" | "admin">("registration");
+  const location = useLocation();
+  const isAdmin = location.pathname === "/admin";
   const [step, setStep] = useState<Step>("date");
   const [month, setMonth] = useState(() => {
     const now = new Date();
@@ -25,27 +27,6 @@ export default function App() {
   const [openedWeekends, setOpenedWeekends] = useState<string[]>([]);
   const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
   const monthInitRef = useRef(false);
-
-  /* Secret logo tap — 5 rapid clicks open admin */
-  const logoTapsRef = useRef(0);
-  const logoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const handleLogoClick = () => {
-    if (mode === "admin") {
-      setMode("registration");
-      resetRegistration();
-      return;
-    }
-    logoTapsRef.current += 1;
-    if (logoTimerRef.current) clearTimeout(logoTimerRef.current);
-    if (logoTapsRef.current >= 5) {
-      logoTapsRef.current = 0;
-      setMode("admin");
-    } else {
-      logoTimerRef.current = setTimeout(() => {
-        logoTapsRef.current = 0;
-      }, 1200);
-    }
-  };
 
   useEffect(() => {
     getDatesStatus()
@@ -108,10 +89,7 @@ export default function App() {
         className="shadow-sm sticky top-0 z-30"
       >
         <div className="mx-auto max-w-6xl px-4 py-3 flex items-center gap-4">
-          <button
-            onClick={handleLogoClick}
-            className="flex items-center gap-3 text-left select-none"
-          >
+          <div className="flex items-center gap-3 select-none">
             <img
               src="/123.jpg"
               alt="Логотип колледжа"
@@ -129,7 +107,7 @@ export default function App() {
                 Предварительная запись в приёмную комиссию
               </div>
             </div>
-          </button>
+          </div>
         </div>
       </header>
 
@@ -148,7 +126,13 @@ export default function App() {
       <main className="mx-auto max-w-6xl gap-6 px-4 py-6 grid lg:grid-cols-[1fr_300px]">
         <section className="min-w-0">
           <ErrorBoundary>
-          {mode === "registration" ? (
+          {isAdmin ? (
+            <AdminPanel
+              onClose={() => {
+                resetRegistration();
+              }}
+            />
+          ) : (
             <RegistrationFlow
               step={step}
               month={month}
@@ -173,13 +157,6 @@ export default function App() {
                 }
               }}
               onSuccess={resetRegistration}
-            />
-          ) : (
-            <AdminPanel
-              onClose={() => {
-                setMode("registration");
-                resetRegistration();
-              }}
             />
           )}
           </ErrorBoundary>
