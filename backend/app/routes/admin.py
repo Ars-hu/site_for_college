@@ -163,7 +163,22 @@ def update_slot():
         db.session.add(cfg)
 
     if max_capacity is not None:
-        cfg.max_capacity = max(1, int(max_capacity))
+        new_capacity = max(1, int(max_capacity))
+
+        current_count = Application.query.filter_by(
+            registration_date=date,
+            registration_time=time
+        ).count()
+
+        if new_capacity < current_count:
+            return jsonify({
+                "error": (
+                    f"На это время уже записано {current_count} человек. "
+                    f"Нельзя установить лимит меньше этого значения."
+                )
+            }), 400
+
+        cfg.max_capacity = new_capacity
     if is_blocked is not None:
         cfg.is_blocked = bool(is_blocked)
 
@@ -220,6 +235,15 @@ def remove_month():
     row = AllowedMonth.query.filter_by(year=year, month=month).first()
     if not row:
         return jsonify({"error": "Месяц не найден"}), 404
+    month_prefix = f"{year}-{month:02d}"
+    existing_application = Application.query.filter(
+        Application.registration_date.like(f"{month_prefix}-%")
+    ).first()
+
+    if existing_application:
+        return jsonify({
+            "error": "В этом месяце есть актуальные записи"
+        }), 409
     db.session.delete(row)
     db.session.commit()
     return jsonify({"removed": True})
