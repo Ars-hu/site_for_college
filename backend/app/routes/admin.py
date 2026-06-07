@@ -42,7 +42,66 @@ def login():
 def get_applications():
     if not verify_token(request):
         return jsonify({"message": "Нет доступа"}), 401
-    apps = Application.query.order_by(Application.created_at.desc()).all()
+
+    # ── Query params ──────────────────────────────────────────────────────────
+    search   = (request.args.get("search", "") or "").strip()
+    sort     = request.args.get("sort", "registration_date")
+    order    = request.args.get("order", "asc")
+    try:
+        page      = max(1, int(request.args.get("page", 1)))
+        page_size = max(1, min(200, int(request.args.get("page_size", 25))))
+    except (TypeError, ValueError):
+        page, page_size = 1, 25
+
+    # ── Base query ────────────────────────────────────────────────────────────
+    q = Application.query
+
+    # ── Search (fio, phone, email, registration_date, registration_time) ──────
+    if search:
+        like = f"%{search}%"
+        q = q.filter(
+            db.or_(
+                Application.fio.ilike(like),
+                Application.phone.ilike(like),
+                Application.email.ilike(like),
+                Application.registration_date.ilike(like),
+                Application.registration_time.ilike(like),
+            )
+        )
+
+    # ── Total count (before pagination, after search) ─────────────────────────
+    total = q.count()
+
+    # ── Sort ──────────────────────────────────────────────────────────────────
+    SORT_COLUMNS = {
+        "fio":               Application.fio,
+        "registration_date": Application.registration_date,
+        "registration_time": Application.registration_time,
+        "created_at":        Application.created_at,
+    }
+    col = SORT_COLUMNS.get(sort, Application.registration_date)
+    if order == "desc":
+        q = q.order_by(col.desc())
+    else:
+        q = q.order_by(col.asc())
+
+    # Secondary sort for stable ordering
+    if sort == "registration_date":
+        q = q.order_by(
+            Application.registration_time.asc()
+            if order == "asc"
+            else Application.registration_time.desc()
+        )
+    elif sort == "registration_time":
+        q = q.order_by(
+            Application.registration_date.asc()
+            if order == "asc"
+            else Application.registration_date.desc()
+        )
+
+    # ── Pagination ────────────────────────────────────────────────────────────
+    apps = q.offset((page - 1) * page_size).limit(page_size).all()
+
     result = [
         {
             "id": a.id,
@@ -55,7 +114,14 @@ def get_applications():
         }
         for a in apps
     ]
-    return jsonify(result)
+
+    return jsonify({
+        "items":      result,
+        "total":      total,
+        "page":       page,
+        "page_size":  page_size,
+        "total_pages": max(1, -(-total // page_size)),  # ceil division
+    })
 
 
 @admin_bp.route("/blocked-dates", methods=["GET"])

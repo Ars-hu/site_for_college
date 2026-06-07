@@ -77,8 +77,31 @@ export function loginAdmin(username: string, password: string) {
   });
 }
 
-export function getApplications(token: string) {
-  return request<Application[]>("/api/admin/applications", {
+export type ApplicationsParams = {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  sort?: "fio" | "registration_date" | "registration_time" | "created_at";
+  order?: "asc" | "desc";
+};
+
+export type ApplicationsPage = {
+  items: Application[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+};
+
+export function getApplications(token: string, params: ApplicationsParams = {}) {
+  const qs = new URLSearchParams();
+  if (params.page)      qs.set("page",      String(params.page));
+  if (params.page_size) qs.set("page_size", String(params.page_size));
+  if (params.search)    qs.set("search",    params.search);
+  if (params.sort)      qs.set("sort",      params.sort);
+  if (params.order)     qs.set("order",     params.order);
+  const query = qs.toString() ? `?${qs}` : "";
+  return request<ApplicationsPage>(`/api/admin/applications${query}`, {
     headers: { Authorization: token },
   });
 }

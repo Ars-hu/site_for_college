@@ -1,23 +1,41 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   CalendarDays,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   Download,
   LayoutList,
   Search,
 } from "lucide-react";
-import { type Application, getApplications } from "../lib/api";
+import {
+  type Application,
+  type ApplicationsParams,
+  type ApplicationsPage,
+  getApplications,
+} from "../lib/api";
 import { BLUE, BLUE_LIGHT, TIME_SLOTS, WEEK_DAYS } from "../lib/constants";
-import { formatDisplayDate, isSameDate, normalizeToday, startOfCalendar, toApiDate } from "../lib/utils";
+import {
+  formatDisplayDate,
+  isSameDate,
+  normalizeToday,
+  startOfCalendar,
+  toApiDate,
+} from "../lib/utils";
 import { MonthNav } from "./MonthNav";
 
 type AppView = "list" | "calendar";
-type SortField = "registration_date" | "registration_time" | "fio" | "created_at";
+type SortField = ApplicationsParams["sort"] & string;
 type SortDir = "asc" | "desc";
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100];
+const SEARCH_DEBOUNCE_MS = 400;
+
+// ─── Main component ──────────────────────────────────────────────────────────
 
 export function ApplicationsTab({
   token,
@@ -26,66 +44,73 @@ export function ApplicationsTab({
   token: string;
   onAuthError: () => void;
 }) {
-  const [applications, setApplications] = useState<Application[]>([]);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
   const [view, setView] = useState<AppView>("list");
-  const [calMonth, setCalMonth] = useState(() => new Date());
-  const [calDate, setCalDate] = useState<string | null>(null);
+
+  // List state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [sortField, setSortField] = useState<SortField>("registration_date");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
 
+  const [data, setData] = useState<ApplicationsPage | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Calendar state — uses a separate full-list fetch
+  const [calMonth, setCalMonth] = useState(() => new Date());
+  const [calDate, setCalDate] = useState<string | null>(null);
+  const [allApps, setAllApps] = useState<Application[]>([]);
+  const [calLoading, setCalLoading] = useState(false);
+
+  // Debounce search input
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const handleSearch = (value: string) => {
+    setSearch(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setDebouncedSearch(value);
+      setPage(1);
+    }, SEARCH_DEBOUNCE_MS);
+  };
+
+  // Fetch paginated list
   useEffect(() => {
+    if (view !== "list") return;
     let active = true;
     setLoading(true);
-    getApplications(token)
-      .then((d) => {
-        if (active) setApplications(d);
-      })
+    getApplications(token, {
+      page,
+      page_size: pageSize,
+      search: debouncedSearch || undefined,
+      sort: sortField as ApplicationsParams["sort"],
+      order: sortDir,
+    })
+      .then((d) => { if (active) setData(d); })
       .catch((e) => {
-        if (e.message === "Нет доступа" || e.message?.includes("401"))
-          onAuthError();
+        if (!active) return;
+        if (e.message === "Нет доступа" || e.message?.includes("401")) onAuthError();
         else toast.error(e.message);
       })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [token, onAuthError]);
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [token, onAuthError, view, page, pageSize, debouncedSearch, sortField, sortDir]);
 
-  const filtered = applications.filter((item) => {
-    const q = search.toLowerCase();
-    return [
-      item.fio,
-      item.phone,
-      item.email,
-      item.registration_date,
-      item.registration_time,
-    ]
-      .join(" ")
-      .toLowerCase()
-      .includes(q);
-  });
-
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      let cmp = 0;
-      if (sortField === "registration_date") {
-        cmp = a.registration_date.localeCompare(b.registration_date);
-        if (cmp === 0) cmp = a.registration_time.localeCompare(b.registration_time);
-      } else if (sortField === "registration_time") {
-        cmp = a.registration_time.localeCompare(b.registration_time);
-        if (cmp === 0) cmp = a.registration_date.localeCompare(b.registration_date);
-      } else if (sortField === "fio") {
-        cmp = a.fio.localeCompare(b.fio, "ru");
-      } else if (sortField === "created_at") {
-        cmp = a.created_at.localeCompare(b.created_at);
-      }
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-  }, [filtered, sortField, sortDir]);
+  // Fetch all apps for calendar (no pagination)
+  useEffect(() => {
+    if (view !== "calendar") return;
+    let active = true;
+    setCalLoading(true);
+    getApplications(token, { page: 1, page_size: 10000 })
+      .then((d) => { if (active) setAllApps(d.items); })
+      .catch((e) => {
+        if (!active) return;
+        if (e.message === "Нет доступа" || e.message?.includes("401")) onAuthError();
+        else toast.error(e.message);
+      })
+      .finally(() => { if (active) setCalLoading(false); });
+    return () => { active = false; };
+  }, [token, onAuthError, view]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
@@ -94,74 +119,72 @@ export function ApplicationsTab({
       setSortField(field);
       setSortDir("asc");
     }
+    setPage(1);
   };
 
   const byDate = useMemo(() => {
     const map: Record<string, Application[]> = {};
-    for (const app of applications) {
+    for (const app of allApps) {
       if (!map[app.registration_date]) map[app.registration_date] = [];
       map[app.registration_date].push(app);
     }
     return map;
-  }, [applications]);
+  }, [allApps]);
 
-  const exportCsv = () => {
-    const header = ["ID", "ФИО", "Телефон", "Email", "Дата", "Время", "Создано"];
-    const rows = sorted.map((item) => [
-      item.id,
-      item.fio,
-      item.phone,
-      item.email,
-      item.registration_date,
-      item.registration_time,
-      item.created_at,
-    ]);
-    const csv = [header, ...rows]
-      .map((row) =>
-        row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";")
-      )
-      .join("\n");
-    const blob = new Blob([`﻿${csv}`], { type: "text/csv;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "applications.csv";
-    a.click();
-    URL.revokeObjectURL(url);
+  const exportCsv = async () => {
+    try {
+      const all = await getApplications(token, {
+        page: 1,
+        page_size: 10000,
+        search: debouncedSearch || undefined,
+        sort: sortField as ApplicationsParams["sort"],
+        order: sortDir,
+      });
+      const header = ["ID", "ФИО", "Телефон", "Email", "Дата", "Время", "Создано"];
+      const rows = all.items.map((item) => [
+        item.id, item.fio, item.phone, item.email,
+        item.registration_date, item.registration_time, item.created_at,
+      ]);
+      const csv = [header, ...rows]
+        .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+        .join("\n");
+      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "applications.csv"; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
-  const focusStyle = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = BLUE;
-  };
-  const blurStyle = (e: React.FocusEvent<HTMLInputElement>) => {
-    e.target.style.borderColor = "#e5e7eb";
-  };
+  const focusStyle = (e: React.FocusEvent<HTMLInputElement>) => { e.target.style.borderColor = BLUE; };
+  const blurStyle  = (e: React.FocusEvent<HTMLInputElement>) => { e.target.style.borderColor = "#e5e7eb"; };
+
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.total_pages ?? 1;
 
   return (
     <div>
+      {/* Top bar */}
       <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-gray-500">
-          Всего записей: {applications.length}
+          Всего записей: {view === "list" ? total : allApps.length}
         </p>
         <div className="flex gap-2">
           <div className="flex rounded-lg border border-gray-200 overflow-hidden">
             <button
               onClick={() => setView("list")}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition"
-              style={{
-                background: view === "list" ? BLUE : "#fff",
-                color: view === "list" ? "#fff" : "#555",
-              }}
+              style={{ background: view === "list" ? BLUE : "#fff", color: view === "list" ? "#fff" : "#555" }}
             >
               <LayoutList className="h-4 w-4" /> Список
             </button>
             <button
               onClick={() => setView("calendar")}
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition"
-              style={{
-                background: view === "calendar" ? BLUE : "#fff",
-                color: view === "calendar" ? "#fff" : "#555",
-              }}
+              style={{ background: view === "calendar" ? BLUE : "#fff", color: view === "calendar" ? "#fff" : "#555" }}
             >
               <CalendarDays className="h-4 w-4" /> По дате
             </button>
@@ -177,52 +200,43 @@ export function ApplicationsTab({
 
       {view === "list" ? (
         <div>
+          {/* Search */}
           <div className="relative mb-4 max-w-md">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               className="w-full rounded-lg border border-gray-200 py-3 pl-10 pr-3 outline-none"
               placeholder="Поиск по ФИО, телефону, email или дате"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               onFocus={focusStyle}
               onBlur={blurStyle}
             />
           </div>
+
+          {/* Table */}
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full min-w-[700px] border-collapse text-left text-sm">
               <thead style={{ background: BLUE, color: "#fff" }}>
                 <tr>
-                  <SortTh label="ФИО" field="fio" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh label="ФИО"     field="fio"               sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                   <th className="px-4 py-3 font-semibold text-xs uppercase">Контакты</th>
-                  <SortTh label="Дата" field="registration_date" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="Время" field="registration_time" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-                  <SortTh label="Создано" field="created_at" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh label="Дата"    field="registration_date" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh label="Время"   field="registration_time" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <SortTh label="Создано" field="created_at"        sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
-                      Загружаем заявки...
-                    </td>
-                  </tr>
-                ) : filtered.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-gray-400">
-                      Заявок не найдено
-                    </td>
-                  </tr>
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Загружаем заявки...</td></tr>
+                ) : items.length === 0 ? (
+                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Заявок не найдено</td></tr>
                 ) : (
-                  sorted.map((item) => (
+                  items.map((item) => (
                     <tr
                       key={item.id}
                       style={{ cursor: "default" }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = BLUE_LIGHT;
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = "";
-                      }}
+                      onMouseEnter={(e) => { e.currentTarget.style.background = BLUE_LIGHT; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.background = ""; }}
                     >
                       <td className="px-4 py-3">
                         <div className="font-semibold">{item.fio}</div>
@@ -232,22 +246,14 @@ export function ApplicationsTab({
                         <div>{item.phone}</div>
                         <div className="text-xs text-gray-500">{item.email}</div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">
-                        {formatDisplayDate(item.registration_date)}
-                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">{formatDisplayDate(item.registration_date)}</td>
                       <td className="px-4 py-3">
-                        <span
-                          className="rounded px-2 py-1 font-semibold text-white text-xs"
-                          style={{ background: BLUE }}
-                        >
+                        <span className="rounded px-2 py-1 font-semibold text-white text-xs" style={{ background: BLUE }}>
                           {item.registration_time}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                        {new Intl.DateTimeFormat("ru-RU", {
-                          dateStyle: "short",
-                          timeStyle: "short",
-                        }).format(new Date(item.created_at))}
+                        {new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.created_at))}
                       </td>
                     </tr>
                   ))
@@ -255,11 +261,25 @@ export function ApplicationsTab({
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {!loading && total > 0 && (
+            <Pagination
+              page={page}
+              totalPages={totalPages}
+              pageSize={pageSize}
+              totalItems={total}
+              from={(page - 1) * pageSize + 1}
+              to={Math.min(page * pageSize, total)}
+              onPage={setPage}
+              onPageSize={(ps) => { setPageSize(ps); setPage(1); }}
+            />
+          )}
         </div>
       ) : (
         <CalendarAppView
           byDate={byDate}
-          loading={loading}
+          loading={calLoading}
           month={calMonth}
           onMonthChange={setCalMonth}
           selectedDate={calDate}
@@ -270,26 +290,94 @@ export function ApplicationsTab({
   );
 }
 
-function SortTh({
-  label,
-  field,
-  sortField,
-  sortDir,
-  onSort,
+// ─── Pagination ──────────────────────────────────────────────────────────────
+
+function Pagination({
+  page, totalPages, pageSize, totalItems, from, to, onPage, onPageSize,
 }: {
-  label: string;
-  field: SortField;
-  sortField: SortField;
-  sortDir: SortDir;
+  page: number; totalPages: number; pageSize: number; totalItems: number;
+  from: number; to: number;
+  onPage: (p: number) => void; onPageSize: (ps: number) => void;
+}) {
+  const pages = buildPageRange(page, totalPages);
+  return (
+    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm text-gray-500 order-2 sm:order-1">
+        Показаны <span className="font-medium text-gray-700">{from}–{to}</span> из{" "}
+        <span className="font-medium text-gray-700">{totalItems}</span>
+      </p>
+      <div className="flex items-center gap-1 order-1 sm:order-2">
+        <PageBtn onClick={() => onPage(page - 1)} disabled={page === 1} aria-label="Предыдущая">
+          <ChevronLeft className="h-4 w-4" />
+        </PageBtn>
+        {pages.map((p, i) =>
+          p === "…" ? (
+            <span key={`e${i}`} className="px-2 text-gray-400 select-none">…</span>
+          ) : (
+            <PageBtn key={p} active={p === page} onClick={() => onPage(p as number)}>{p}</PageBtn>
+          )
+        )}
+        <PageBtn onClick={() => onPage(page + 1)} disabled={page === totalPages} aria-label="Следующая">
+          <ChevronRight className="h-4 w-4" />
+        </PageBtn>
+      </div>
+      <div className="flex items-center gap-2 order-3 text-sm text-gray-500">
+        <span>Строк:</span>
+        <select
+          value={pageSize}
+          onChange={(e) => onPageSize(Number(e.target.value))}
+          className="rounded-lg border border-gray-200 px-2 py-1 text-sm outline-none cursor-pointer"
+          style={{ color: "#374151" }}
+        >
+          {PAGE_SIZE_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+      </div>
+    </div>
+  );
+}
+
+function PageBtn({ children, onClick, disabled, active, "aria-label": al }: {
+  children: React.ReactNode; onClick?: () => void;
+  disabled?: boolean; active?: boolean; "aria-label"?: string;
+}) {
+  return (
+    <button
+      onClick={onClick} disabled={disabled} aria-label={al}
+      className="inline-flex h-8 min-w-[2rem] items-center justify-center rounded-lg border px-2 text-sm font-medium transition"
+      style={{
+        background: active ? BLUE : disabled ? "#f9fafb" : "#fff",
+        color: active ? "#fff" : disabled ? "#d1d5db" : "#374151",
+        borderColor: active ? BLUE : "#e5e7eb",
+        cursor: disabled ? "default" : "pointer",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function buildPageRange(current: number, total: number): (number | "…")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const result: (number | "…")[] = [];
+  const add = (n: number | "…") => { if (result[result.length - 1] !== n) result.push(n); };
+  add(1);
+  if (current > 3) add("…");
+  for (let p = Math.max(2, current - 1); p <= Math.min(total - 1, current + 1); p++) add(p);
+  if (current < total - 2) add("…");
+  add(total);
+  return result;
+}
+
+// ─── SortTh ──────────────────────────────────────────────────────────────────
+
+function SortTh({ label, field, sortField, sortDir, onSort }: {
+  label: string; field: SortField; sortField: SortField; sortDir: SortDir;
   onSort: (f: SortField) => void;
 }) {
   const active = field === sortField;
   const Icon = active ? (sortDir === "asc" ? ArrowUp : ArrowDown) : ArrowUpDown;
   return (
-    <th
-      className="px-4 py-3 font-semibold text-xs uppercase cursor-pointer select-none"
-      onClick={() => onSort(field)}
-    >
+    <th className="px-4 py-3 font-semibold text-xs uppercase cursor-pointer select-none" onClick={() => onSort(field)}>
       <span className="inline-flex items-center gap-1">
         {label}
         <Icon className="h-3.5 w-3.5" style={{ opacity: active ? 1 : 0.45 }} />
@@ -298,35 +386,20 @@ function SortTh({
   );
 }
 
-function CalendarAppView({
-  byDate,
-  loading,
-  month,
-  onMonthChange,
-  selectedDate,
-  onDateSelect,
-}: {
-  byDate: Record<string, Application[]>;
-  loading: boolean;
-  month: Date;
-  onMonthChange: (d: Date) => void;
-  selectedDate: string | null;
-  onDateSelect: (d: string | null) => void;
+// ─── Calendar view ────────────────────────────────────────────────────────────
+
+function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, onDateSelect }: {
+  byDate: Record<string, Application[]>; loading: boolean; month: Date;
+  onMonthChange: (d: Date) => void; selectedDate: string | null; onDateSelect: (d: string | null) => void;
 }) {
   const today = normalizeToday();
   const days = useMemo(() => {
     const start = startOfCalendar(month);
     return Array.from({ length: 42 }, (_, i) => {
-      const d = new Date(start);
-      d.setDate(start.getDate() + i);
-      return d;
+      const d = new Date(start); d.setDate(start.getDate() + i); return d;
     });
   }, [month]);
-  const title = new Intl.DateTimeFormat("ru-RU", {
-    month: "long",
-    year: "numeric",
-  }).format(month);
-
+  const title = new Intl.DateTimeFormat("ru-RU", { month: "long", year: "numeric" }).format(month);
   const dateApps = selectedDate ? (byDate[selectedDate] ?? []) : [];
   const byTime = useMemo(() => {
     const map: Record<string, Application[]> = {};
@@ -337,27 +410,18 @@ function CalendarAppView({
     return map;
   }, [dateApps]);
 
-  if (loading)
-    return (
-      <div className="py-8 text-center text-gray-400">Загружаем заявки...</div>
-    );
+  if (loading) return <div className="py-8 text-center text-gray-400">Загружаем заявки...</div>;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold capitalize" style={{ color: BLUE }}>
-            {title}
-          </h2>
+          <h2 className="text-lg font-semibold capitalize" style={{ color: BLUE }}>{title}</h2>
           <MonthNav month={month} onMonthChange={onMonthChange} />
         </div>
-        <p className="text-xs text-gray-400 mb-3">
-          Нажмите на дату, чтобы увидеть записи на этот день.
-        </p>
+        <p className="text-xs text-gray-400 mb-3">Нажмите на дату, чтобы увидеть записи на этот день.</p>
         <div className="grid grid-cols-7 pb-2 text-center text-xs font-semibold uppercase text-gray-400 border-b border-gray-200">
-          {WEEK_DAYS.map((d) => (
-            <div key={d}>{d}</div>
-          ))}
+          {WEEK_DAYS.map((d) => <div key={d}>{d}</div>)}
         </div>
         <div className="mt-2 grid grid-cols-7 gap-2">
           {days.map((day) => {
@@ -366,21 +430,11 @@ function CalendarAppView({
             const count = byDate[apiDate]?.length ?? 0;
             const isSelected = apiDate === selectedDate;
             const isToday = isSameDate(day, today);
-
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const hasApps = count > 0 && !outOfMonth;
             const unavailable = outOfMonth || (isWeekend && !hasApps);
-
-            const bgBase = outOfMonth
-              ? "transparent"
-              : hasApps
-              ? "#bfdbfe"
-              : isWeekend
-              ? "#f3f4f6"
-              : "#fff";
-
+            const bgBase = outOfMonth ? "transparent" : hasApps ? "#bfdbfe" : isWeekend ? "#f3f4f6" : "#fff";
             const bgHover = unavailable ? bgBase : "#eff6ff";
-
             return (
               <button
                 key={day.toISOString()}
@@ -391,28 +445,14 @@ function CalendarAppView({
                   background: isSelected ? "#bfdbfe" : bgBase,
                   cursor: unavailable ? "default" : "pointer",
                   color: outOfMonth ? "transparent" : isWeekend && !hasApps ? "#bbb" : "inherit",
-                  borderColor: outOfMonth
-                    ? "transparent"
-                    : hasApps || isSelected
-                    ? "#93c5fd"
-                    : isWeekend
-                    ? "#e5e7eb"
-                    : undefined,
+                  borderColor: outOfMonth ? "transparent" : hasApps || isSelected ? "#93c5fd" : isWeekend ? "#e5e7eb" : undefined,
                 }}
-                onMouseEnter={(e) => {
-                  if (!unavailable) e.currentTarget.style.background = bgHover;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = isSelected ? "#bfdbfe" : bgBase;
-                }}
+                onMouseEnter={(e) => { if (!unavailable) e.currentTarget.style.background = bgHover; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = isSelected ? "#bfdbfe" : bgBase; }}
               >
                 <span
                   className="inline-grid h-9 w-9 place-items-center rounded-full text-base font-semibold"
-                  style={
-                    isToday && !hasApps && !isSelected
-                      ? { background: BLUE, color: "#fff" }
-                      : {}
-                  }
+                  style={isToday && !hasApps && !isSelected ? { background: BLUE, color: "#fff" } : {}}
                 >
                   {day.getDate()}
                 </span>
@@ -435,46 +475,30 @@ function CalendarAppView({
           </span>
         </div>
       </div>
-
       <div>
         {selectedDate ? (
           <div>
             <div className="mb-4">
-              <h3 className="font-semibold text-lg text-gray-800">
-                {formatDisplayDate(selectedDate)}
-              </h3>
-              <p className="text-sm text-gray-500">
-                Всего записей: {dateApps.length}
-              </p>
+              <h3 className="font-semibold text-lg text-gray-800">{formatDisplayDate(selectedDate)}</h3>
+              <p className="text-sm text-gray-500">Всего записей: {dateApps.length}</p>
             </div>
             {dateApps.length === 0 ? (
-              <div className="rounded-lg border border-gray-200 p-6 text-center text-gray-400">
-                На этот день записей нет.
-              </div>
+              <div className="rounded-lg border border-gray-200 p-6 text-center text-gray-400">На этот день записей нет.</div>
             ) : (
               <div className="space-y-3">
                 {TIME_SLOTS.filter((t) => byTime[t]?.length).map((time) => (
-                  <div
-                    key={time}
-                    className="rounded-lg border border-gray-200 overflow-hidden"
-                  >
-                    <div
-                      className="flex items-center gap-3 px-4 py-2"
-                      style={{ background: BLUE }}
-                    >
+                  <div key={time} className="rounded-lg border border-gray-200 overflow-hidden">
+                    <div className="flex items-center gap-3 px-4 py-2" style={{ background: BLUE }}>
                       <Clock className="h-4 w-4 text-white opacity-80" />
                       <span className="font-bold text-white">{time}</span>
-                      <span className="ml-auto text-xs text-white opacity-70">
-                        {byTime[time].length} чел.
-                      </span>
+                      <span className="ml-auto text-xs text-white opacity-70">{byTime[time].length} чел.</span>
                     </div>
                     <div className="divide-y divide-gray-100">
                       {byTime[time].map((app) => (
                         <div key={app.id} className="px-4 py-3">
                           <div className="font-medium text-sm">{app.fio}</div>
                           <div className="flex gap-4 mt-1 text-xs text-gray-500">
-                            <span>{app.phone}</span>
-                            <span>{app.email}</span>
+                            <span>{app.phone}</span><span>{app.email}</span>
                           </div>
                         </div>
                       ))}
@@ -487,11 +511,7 @@ function CalendarAppView({
         ) : (
           <div className="flex flex-col items-center justify-center py-16 text-center text-gray-400">
             <CalendarDays className="h-12 w-12 mb-3 opacity-30" />
-            <p className="text-sm">
-              Выберите дату в календаре
-              <br />
-              чтобы увидеть записи
-            </p>
+            <p className="text-sm">Выберите дату в календаре<br />чтобы увидеть записи</p>
           </div>
         )}
       </div>
