@@ -1,17 +1,33 @@
 # Тверской колледж им. А. Н. Коняева
 
-Веб-приложение для предварительной записи абитуриентов в приемную комиссию.
+Веб-приложение для предварительной записи абитуриентов в приёмную комиссию.
 
 ## Стек
 
-- Frontend: React, Vite, Tailwind CSS.
-- Backend: Flask, SQLAlchemy, PyJWT.
-- База данных: SQLite по умолчанию, можно заменить через `DATABASE_URL`.
-- Docker: frontend отдается через nginx, `/api` проксируется в Flask backend.
+| Слой | Технологии |
+|------|------------|
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, Lucide React, react-hot-toast |
+| Backend | Python, Flask, SQLAlchemy, PyJWT, Flask-Limiter |
+| База данных | PostgreSQL 16 (Docker), SQLite (локальная разработка) |
+| Инфраструктура | Docker Compose, nginx (раздача фронта + реверс-прокси `/api`) |
+
+## Функциональность
+
+**Для абитуриентов:**
+- Трёхшаговая запись: выбор даты → выбор времени → заполнение формы
+- Интерактивный календарь с подсветкой занятых, заблокированных и открытых дат
+- Временные слоты: 09:00–15:00, шаг 30 минут
+- Проверка дублей по номеру телефона и email в рамках одной даты
+
+**Для администратора:**
+- Вход через скрытый жест (5 кликов по логотипу за 1.2 сек)
+- Просмотр всех заявок с сортировкой по дате создания
+- Блокировка/разблокировка дат целиком
+- Открытие выходных дней для записи
+- Настройка каждого временного слота: вместимость и блокировка
+- Управление разрешёнными месяцами записи
 
 ## Запуск через Docker
-
-Из корня проекта:
 
 ```bash
 docker compose up --build
@@ -19,14 +35,14 @@ docker compose up --build
 
 После запуска:
 
-- сайт: `http://localhost:8080`
-- backend внутри Docker: `backend:5000`
-- API с браузера доступен через frontend: `http://localhost:8080/api/...`
+- Сайт: `http://localhost`
+- API через фронтенд: `http://localhost/api/...`
+- Backend внутри Docker: `backend:5000`
 
 Данные администратора по умолчанию:
 
-- логин: `admin`
-- пароль: `admin123`
+- Логин: `admin`
+- Пароль: `admin123`
 
 Остановить контейнеры:
 
@@ -34,7 +50,7 @@ docker compose up --build
 docker compose down
 ```
 
-Остановить контейнеры и удалить volume с SQLite-базой:
+Остановить и удалить volume с базой данных:
 
 ```bash
 docker compose down -v
@@ -46,7 +62,8 @@ docker compose down -v
 
 ```bash
 cd backend
-venv\Scripts\activate
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # Linux / macOS
 python run.py
 ```
 
@@ -57,23 +74,50 @@ API будет доступен на `http://localhost:5000`.
 В новом терминале из корня проекта:
 
 ```bash
-npm install --registry=https://registry.npmjs.org
+npm install
 npm run dev
 ```
 
-Фронт будет доступен на `http://localhost:5173`.
+Фронтенд будет доступен на `http://localhost:5173`. Vite автоматически проксирует `/api` на `http://localhost:5000`.
 
-Vite проксирует `/api` на `http://localhost:5000`.
+## Переменные окружения
 
-## Проверка сборки
+| Переменная | По умолчанию | Описание |
+|------------|--------------|----------|
+| `SECRET_KEY` | `your-super-secret-key` | Ключ подписи JWT — **обязательно изменить в продакшне** |
+| `DATABASE_URL` | `sqlite:///registrations.db` | URL базы данных (SQLite или PostgreSQL) |
+| `CORS_ORIGINS` | `*` | Разрешённые CORS-источники (запятая как разделитель) |
+
+## API
+
+### Публичные эндпоинты
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `GET` | `/api/allowed-months` | Список месяцев, открытых для записи |
+| `GET` | `/api/dates-status` | Статус дат: заблокированные, заполненные, открытые выходные |
+| `GET` | `/api/slots-status/<yyyy-mm-dd>` | Занятость временных слотов на конкретную дату |
+| `POST` | `/api/register` | Создание заявки (лимит: 10 запросов/мин) |
+
+### Административные эндпоинты
+
+Все запросы требуют заголовок `Authorization: <JWT-токен>`.
+
+| Метод | URL | Описание |
+|-------|-----|----------|
+| `POST` | `/api/admin/login` | Вход администратора (лимит: 5 запросов/мин) |
+| `GET` | `/api/admin/applications` | Список всех заявок |
+| `GET` | `/api/admin/blocked-dates` | Заблокированные и открытые даты |
+| `POST` | `/api/admin/toggle-date` | Блокировка / разблокировка даты |
+| `POST` | `/api/admin/toggle-weekend` | Открытие / закрытие выходного дня |
+| `GET` | `/api/admin/slot-configs/<yyyy-mm-dd>` | Конфигурация слотов на дату |
+| `POST` | `/api/admin/update-slot` | Изменение вместимости или блокировка слота |
+| `GET` | `/api/admin/allowed-months` | Список разрешённых месяцев |
+| `POST` | `/api/admin/add-month` | Добавление разрешённого месяца |
+| `POST` | `/api/admin/remove-month` | Удаление разрешённого месяца |
+
+## Сборка фронтенда
 
 ```bash
 npm run build
 ```
-
-## API
-
-- `GET /api/slots-status/<yyyy-mm-dd>` - занятость временных слотов.
-- `POST /api/register` - создание заявки.
-- `POST /api/admin/login` - вход администратора.
-- `GET /api/admin/applications` - список заявок, нужен header `Authorization`.
