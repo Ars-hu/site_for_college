@@ -1,7 +1,6 @@
 import { BLUE } from "../lib/constants";
 import type { AllowedMonth } from "../lib/api";
 import { Card } from "./Card";
-import { StepBadge } from "./StepBadge";
 import { CalendarView } from "./CalendarView";
 import { TimePicker } from "./TimePicker";
 import { RegistrationForm } from "./RegistrationForm";
@@ -49,11 +48,6 @@ export function RegistrationFlow({
         <h1 className="text-2xl font-bold text-gray-800">
           Запись на подачу документов
         </h1>
-        <div className="mt-4 grid grid-cols-3 gap-2">
-          <StepBadge active={step === "date"} done={step !== "date"} text="1. Дата" />
-          <StepBadge active={step === "time"} done={step === "form"} text="2. Время" />
-          <StepBadge active={step === "form"} done={false} text="3. Контакты" />
-        </div>
       </div>
       <div className="p-5">
         {step === "date" && (

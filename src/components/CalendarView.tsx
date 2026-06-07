@@ -105,6 +105,16 @@ export function CalendarView({
           const inRange = !outOfMonth && !isPast && !notAllowed &&
             (!isWeekend || isOpenedWeekend);
 
+          const isAvailable = inRange && !isBlocked && !isFull;
+          const cellBg = disabled
+            ? "#fafafa"
+            : isAvailable
+            ? "#d1fae5"
+            : isFull && inRange
+            ? "#fee2e2"
+            : "#fff";
+          const cellBgHover = isAvailable ? "#a7f3d0" : BLUE_LIGHT;
+
           return (
             <button
               key={day.toISOString()}
@@ -112,15 +122,15 @@ export function CalendarView({
               onClick={() => onDateSelect(day)}
               className="min-h-20 border-b border-r border-gray-200 p-2 text-left"
               style={{
-                background: disabled ? "#fafafa" : "#fff",
+                background: cellBg,
                 color: disabled ? "#ccc" : "inherit",
                 cursor: disabled ? "not-allowed" : "pointer",
               }}
               onMouseEnter={(e) => {
-                if (!disabled) e.currentTarget.style.background = BLUE_LIGHT;
+                if (!disabled) e.currentTarget.style.background = cellBgHover;
               }}
               onMouseLeave={(e) => {
-                if (!disabled) e.currentTarget.style.background = "#fff";
+                if (!disabled) e.currentTarget.style.background = cellBg;
               }}
             >
               <span
@@ -129,30 +139,24 @@ export function CalendarView({
               >
                 {day.getDate()}
               </span>
-
-              {inRange && !isBlocked && !isFull && (
-                <span className="mt-1 block text-xs font-medium text-green-700">
-                  Есть места
-                </span>
-              )}
-              {inRange && isFull && !isBlocked && (
-                <span className="mt-1 block text-xs font-medium text-red-500">
-                  Нет мест
-                </span>
-              )}
-              {inRange && isBlocked && (
-                <span className="mt-1 block text-xs font-medium text-gray-400">
-                  Закрыто
-                </span>
-              )}
-              {inRange && isWeekend && (
-                <span className="mt-1 block text-xs font-medium text-gray-400">
-                  Выходной
-                </span>
-              )}
             </button>
           );
         })}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-4 text-xs text-gray-500">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "#d1fae5", border: "1px solid #6ee7b7" }} />
+          Есть свободные места
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "#fee2e2", border: "1px solid #fca5a5" }} />
+          Мест нет
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "#fafafa", border: "1px solid #e5e7eb" }} />
+          Недоступно
+        </span>
       </div>
     </div>
   );
