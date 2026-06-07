@@ -1,13 +1,31 @@
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: konyaev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: konyaev
+      POSTGRES_USER: konyaev
+      POSTGRES_PASSWORD: konyaev_pass
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U konyaev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: ./backend
     container_name: konyaev-backend
+    restart: unless-stopped
     environment:
       SECRET_KEY: change-me-in-production
-      DATABASE_URL: sqlite:////app/instance/registrations.db
-    volumes:
-      - backend-data:/app/instance
+      DATABASE_URL: postgresql://konyaev:konyaev_pass@db:5432/konyaev
+    depends_on:
+      db:
+        condition: service_healthy
     expose:
       - "5000"
 
@@ -15,10 +33,11 @@ services:
     build:
       context: .
     container_name: konyaev-frontend
+    restart: unless-stopped
     depends_on:
       - backend
     ports:
       - "8080:80"
 
 volumes:
-  backend-data:
+  postgres-data:

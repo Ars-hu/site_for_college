@@ -1,116 +1,169 @@
-import React, { useState } from 'react';
-import { format } from 'date-fns';
-import { ru } from 'date-fns/locale';
-import axios from 'axios';
-import toast from 'react-hot-toast';
+import { useState, type FormEvent } from "react";
+import { toast } from "react-hot-toast";
+import { ArrowLeft, Mail, Phone, User } from "lucide-react";
+import { registerApplication } from "../lib/api";
+import { BLUE, BLUE_DARK, BLUE_LIGHT } from "../lib/constants";
+import { EMAIL_RE, formatDisplayDate, formatPhone, toApiDate } from "../lib/utils";
 
-interface RegistrationFormProps {
+type FormData = { fio: string; phone: string; email: string };
+
+export function RegistrationForm({
+  selectedDate,
+  selectedTime,
+  onBack,
+  onSuccess,
+}: {
   selectedDate: Date;
   selectedTime: string;
+  onBack: () => void;
   onSuccess: () => void;
-}
-
-const RegistrationForm: React.FC<RegistrationFormProps> = ({ selectedDate, selectedTime, onSuccess }) => {
+}) {
+  const [form, setForm] = useState<FormData>({ fio: "", phone: "", email: "" });
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    fio: '',
-    phone: '',
-    email: ''
-  });
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+
+    const phoneDigits = form.phone.replace(/\D/g, "");
+    const localLen =
+      phoneDigits.startsWith("7") || phoneDigits.startsWith("8")
+        ? phoneDigits.length - 1
+        : phoneDigits.length;
+    if (localLen !== 10) {
+      toast.error("Введите полный номер телефона: +7 (XXX) XXX-XX-XX");
+      return;
+    }
+    if (!EMAIL_RE.test(form.email)) {
+      toast.error("Введите корректный email: example@domain.ru");
+      return;
+    }
+
     setLoading(true);
-
-    const payload = {
-      ...formData,
-      registration_date: format(selectedDate, 'yyyy-MM-dd'),
-      registration_time: selectedTime
-    };
-
     try {
-      // Пытаемся отправить на Flask API
-      // Если бэкенд не запущен, здесь будет ошибка (для демонстрации в превью)
-      // В реальной жизни URL будет динамическим
-      await axios.post('http://localhost:5000/api/register', payload);
-      toast.success('Вы успешно записаны!');
+      await registerApplication({
+        ...form,
+        registration_date: toApiDate(selectedDate),
+        registration_time: selectedTime,
+      });
+      toast.success("Вы успешно записаны!");
       onSuccess();
-    } catch (error) {
-      console.error(error);
-      // Имитируем успех для превью, так как Flask в этой среде может не работать напрямую через CORS
-      toast.success('Заявка принята (Demo mode)!');
-      onSuccess();
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Не удалось отправить заявку"
+      );
     } finally {
       setLoading(false);
     }
   };
 
+  const focusStyle = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = BLUE;
+    e.target.style.outline = "none";
+  };
+  const blurStyle = (e: React.FocusEvent<HTMLInputElement>) => {
+    e.target.style.borderColor = "#e5e7eb";
+  };
+
   return (
-    <div className="max-w-xl mx-auto">
-      <div className="bg-blue-600 text-white p-4 rounded-t-xl flex justify-between items-center">
-        <h3 className="text-lg font-bold">Запись на: {format(selectedDate, 'd MMMM', { locale: ru })}</h3>
-        <span className="bg-white text-blue-600 px-3 py-1 rounded-lg font-bold">{selectedTime}</span>
+    <div>
+      <button
+        className="mb-5 inline-flex items-center gap-2 text-sm font-medium"
+        style={{ color: BLUE }}
+        onClick={onBack}
+      >
+        <ArrowLeft className="h-4 w-4" /> Вернуться к выбору времени
+      </button>
+
+      <div
+        className="mb-5 rounded-lg border p-4"
+        style={{ borderColor: BLUE, background: BLUE_LIGHT }}
+      >
+        <div
+          className="text-xs font-semibold uppercase tracking-wide mb-1"
+          style={{ color: BLUE }}
+        >
+          Выбранная запись
+        </div>
+        <div className="text-lg font-bold text-gray-800">
+          {formatDisplayDate(selectedDate)}, {selectedTime}
+        </div>
       </div>
-      
-      <form onSubmit={handleSubmit} className="bg-white border-x border-b rounded-b-xl p-6 space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            ФИО абитуриента *
+
+      <form className="grid gap-4" onSubmit={submit} noValidate>
+        <label className="grid gap-2">
+          <span className="text-sm font-medium text-gray-700">
+            ФИО абитуриента
+          </span>
+          <div className="relative">
+            <User className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <input
+              className="w-full rounded-lg border border-gray-200 py-3 pl-10 pr-3"
+              minLength={5}
+              required
+              value={form.fio}
+              onChange={(e) => setForm({ ...form, fio: e.target.value })}
+              placeholder="Иванов Иван Иванович"
+              onFocus={focusStyle}
+              onBlur={blurStyle}
+            />
+          </div>
+        </label>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="grid gap-2">
+            <span className="text-sm font-medium text-gray-700">Телефон</span>
+            <div className="relative">
+              <Phone className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input
+                className="w-full rounded-lg border border-gray-200 py-3 pl-10 pr-3"
+                required
+                type="tel"
+                inputMode="numeric"
+                value={form.phone}
+                placeholder="+7 (900) 000-00-00"
+                maxLength={18}
+                onChange={(e) =>
+                  setForm({ ...form, phone: formatPhone(e.target.value) })
+                }
+                onFocus={focusStyle}
+                onBlur={blurStyle}
+              />
+            </div>
           </label>
-          <input
-            required
-            type="text"
-            className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
-            placeholder="Иванов Иван Иванович"
-            value={formData.fio}
-            onChange={(e) => setFormData({...formData, fio: e.target.value})}
-          />
+
+          <label className="grid gap-2">
+            <span className="text-sm font-medium text-gray-700">Email</span>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
+              <input
+                className="w-full rounded-lg border border-gray-200 py-3 pl-10 pr-3"
+                required
+                type="email"
+                value={form.email}
+                placeholder="name@example.ru"
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onFocus={focusStyle}
+                onBlur={blurStyle}
+              />
+            </div>
+          </label>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Номер телефона *
-            </label>
-            <input
-              required
-              type="tel"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
-              placeholder="+7 (___) ___-__-__"
-              value={formData.phone}
-              onChange={(e) => setFormData({...formData, phone: e.target.value})}
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email *
-            </label>
-            <input
-              required
-              type="email"
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition"
-              placeholder="example@mail.ru"
-              value={formData.email}
-              onChange={(e) => setFormData({...formData, email: e.target.value})}
-            />
-          </div>
-        </div>
-
-        <div className="pt-4">
-          <button
-            disabled={loading}
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-blue-200 disabled:opacity-50"
-          >
-            {loading ? 'Отправка...' : 'Записаться'}
-          </button>
-          <p className="text-center text-[10px] text-gray-400 mt-4 px-4 uppercase tracking-widest leading-relaxed">
-            Нажимая кнопку «Записаться», вы даете согласие на обработку персональных данных
-          </p>
-        </div>
+        <button
+          className="mt-2 rounded-lg px-5 py-3 font-semibold text-white transition disabled:opacity-60"
+          style={{ background: BLUE }}
+          onMouseEnter={(e) => {
+            if (!loading) e.currentTarget.style.background = BLUE_DARK;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = BLUE;
+          }}
+          disabled={loading}
+          type="submit"
+        >
+          {loading ? "Отправляем..." : "Записаться"}
+        </button>
       </form>
     </div>
   );
-};
-
-export default RegistrationForm;
+}

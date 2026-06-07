@@ -16,6 +16,21 @@ export type RegistrationPayload = {
   registration_time: string;
 };
 
+export type SlotInfo = {
+  occupied: number;
+  max_capacity: number;
+  is_blocked: boolean;
+};
+
+export type SlotsStatusResponse = {
+  date_blocked: boolean;
+  slots: Record<string, SlotInfo>;
+};
+
+export type SlotConfigsResponse = Record<string, SlotInfo>;
+
+export type AllowedMonth = { year: number; month: number };
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(path, {
     ...options,
@@ -36,8 +51,16 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
+export function getAllowedMonths() {
+  return request<AllowedMonth[]>("/api/allowed-months");
+}
+
 export function getSlotsStatus(date: string) {
-  return request<Record<string, number>>(`/api/slots-status/${date}`);
+  return request<SlotsStatusResponse>(`/api/slots-status/${date}`);
+}
+
+export function getDatesStatus() {
+  return request<{ blocked_dates: string[]; full_dates: string[]; opened_weekends: string[] }>("/api/dates-status");
 }
 
 export function registerApplication(payload: RegistrationPayload) {
@@ -56,8 +79,69 @@ export function loginAdmin(username: string, password: string) {
 
 export function getApplications(token: string) {
   return request<Application[]>("/api/admin/applications", {
-    headers: {
-      Authorization: token,
-    },
+    headers: { Authorization: token },
+  });
+}
+
+export function getBlockedDates(token: string) {
+  return request<{ blocked_dates: string[]; opened_weekends: string[] }>("/api/admin/blocked-dates", {
+    headers: { Authorization: token },
+  });
+}
+
+export function getAdminAllowedMonths(token: string) {
+  return request<AllowedMonth[]>("/api/admin/allowed-months", {
+    headers: { Authorization: token },
+  });
+}
+
+export function addAllowedMonth(token: string, year: number, month: number) {
+  return request<AllowedMonth>("/api/admin/add-month", {
+    method: "POST",
+    headers: { Authorization: token },
+    body: JSON.stringify({ year, month }),
+  });
+}
+
+export function removeAllowedMonth(token: string, year: number, month: number) {
+  return request<{ removed: boolean }>("/api/admin/remove-month", {
+    method: "POST",
+    headers: { Authorization: token },
+    body: JSON.stringify({ year, month }),
+  });
+}
+
+export function toggleWeekend(token: string, date: string) {
+  return request<{ opened: boolean; date: string }>("/api/admin/toggle-weekend", {
+    method: "POST",
+    headers: { Authorization: token },
+    body: JSON.stringify({ date }),
+  });
+}
+
+export function toggleDate(token: string, date: string) {
+  return request<{ blocked: boolean; date: string }>("/api/admin/toggle-date", {
+    method: "POST",
+    headers: { Authorization: token },
+    body: JSON.stringify({ date }),
+  });
+}
+
+export function getSlotConfigs(token: string, date: string) {
+  return request<SlotConfigsResponse>(`/api/admin/slot-configs/${date}`, {
+    headers: { Authorization: token },
+  });
+}
+
+export function updateSlot(
+  token: string,
+  date: string,
+  time: string,
+  params: { max_capacity?: number; is_blocked?: boolean }
+) {
+  return request<SlotInfo & { date: string; time: string }>("/api/admin/update-slot", {
+    method: "POST",
+    headers: { Authorization: token },
+    body: JSON.stringify({ date, time, ...params }),
   });
 }

@@ -1,0 +1,141 @@
+import { useEffect, useState } from "react";
+import { toast } from "react-hot-toast";
+import { X } from "lucide-react";
+import { getAdminAllowedMonths, addAllowedMonth, removeAllowedMonth } from "../lib/api";
+import type { AllowedMonth } from "../lib/api";
+import { BLUE } from "../lib/constants";
+
+const MONTH_NAMES = [
+  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+];
+
+export function MonthsTab({
+  token,
+  onAuthError,
+}: {
+  token: string;
+  onAuthError: () => void;
+}) {
+  const currentYear = new Date().getFullYear();
+  const [months, setMonths] = useState<AllowedMonth[]>([]);
+  const [newYear, setNewYear] = useState(currentYear);
+  const [newMonth, setNewMonth] = useState(1);
+  const [adding, setAdding] = useState(false);
+
+  useEffect(() => {
+    getAdminAllowedMonths(token)
+      .then(setMonths)
+      .catch((e) => {
+        if (e.message?.includes("401") || e.message === "Нет доступа") onAuthError();
+        else toast.error(e.message);
+      });
+  }, [token, onAuthError]);
+
+  const handleAdd = async () => {
+    const already = months.some((m) => m.year === newYear && m.month === newMonth);
+    if (already) {
+      toast.error("Этот месяц уже добавлен");
+      return;
+    }
+    setAdding(true);
+    try {
+      const added = await addAllowedMonth(token, newYear, newMonth);
+      setMonths((prev) =>
+        [...prev, added].sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month)
+      );
+      toast.success(`${MONTH_NAMES[added.month - 1]} ${added.year} добавлен`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ошибка");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const handleRemove = async (year: number, month: number) => {
+    try {
+      await removeAllowedMonth(token, year, month);
+      setMonths((prev) => prev.filter((m) => !(m.year === year && m.month === month)));
+      toast.success(`${MONTH_NAMES[month - 1]} ${year} удалён`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Ошибка");
+    }
+  };
+
+  const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
+
+  return (
+    <div className="max-w-lg">
+      <p className="text-sm text-gray-500 mb-6">
+        Выберите месяцы, в которые абитуриенты могут записываться. Изменения
+        применяются немедленно.
+      </p>
+
+      {/* Текущие месяцы */}
+      <div className="mb-6">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
+          Открытые месяцы
+        </p>
+        {months.length === 0 ? (
+          <p className="text-sm text-gray-400 italic">Нет доступных месяцев — запись закрыта.</p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {months.map((m) => (
+              <div
+                key={`${m.year}-${m.month}`}
+                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-white"
+                style={{ background: BLUE }}
+              >
+                <span>{MONTH_NAMES[m.month - 1]} {m.year}</span>
+                <button
+                  onClick={() => handleRemove(m.year, m.month)}
+                  className="grid h-4 w-4 place-items-center rounded-full hover:bg-white/20 transition"
+                  title="Удалить месяц"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Добавление нового месяца */}
+      <div className="border border-gray-200 rounded-xl p-4 bg-gray-50">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+          Добавить месяц
+        </p>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={newYear}
+            onChange={(e) => setNewYear(Number(e.target.value))}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none"
+            style={{ minWidth: 90 }}
+          >
+            {yearOptions.map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+          <select
+            value={newMonth}
+            onChange={(e) => setNewMonth(Number(e.target.value))}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none"
+            style={{ minWidth: 130 }}
+          >
+            {MONTH_NAMES.map((name, i) => (
+              <option key={i + 1} value={i + 1}>{name}</option>
+            ))}
+          </select>
+          <button
+            onClick={handleAdd}
+            disabled={adding}
+            className="rounded-lg px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 transition"
+            style={{ background: BLUE }}
+          >
+            {adding ? "Добавление..." : "Добавить"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
