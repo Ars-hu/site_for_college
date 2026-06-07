@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Toaster } from "react-hot-toast";
-import { CalendarDays, Clock, FileText, Phone } from "lucide-react";
+import { CalendarDays, ChevronRight, FileText, Phone, X } from "lucide-react";
 import { getDatesStatus, getAllowedMonths } from "./lib/api";
 import type { AllowedMonth } from "./lib/api";
-import { BLUE, DOCUMENTS } from "./lib/constants";
+import { BLUE } from "./lib/constants";
 import { Card } from "./components/Card";
 import { RegistrationFlow } from "./components/RegistrationFlow";
 import { AdminPanel } from "./components/AdminPanel";
@@ -72,6 +72,22 @@ export default function App() {
       .catch(() => {});
   }, []);
 
+  const [docsModal, setDocsModal] = useState<"9" | "11" | null>(null);
+
+  const DOCS_9 = [
+    "Копия паспорта (при себе иметь оригинал — ОБЯЗАТЕЛЬНО)",
+    "Копия аттестата (при себе иметь оригинал — ОБЯЗАТЕЛЬНО)",
+    "Справка о результатах ГИА по форме, утверждённой Министерством образования Тверской области",
+    "Копия СНИЛС",
+    "При наличии льгот — копии и оригиналы документов, подтверждающих право на льготы",
+  ];
+
+  const DOCS_11 = [
+    "Копия паспорта (при себе иметь оригинал — ОБЯЗАТЕЛЬНО)",
+    "Копия аттестата 9 классов + 11 классов (при себе иметь оригиналы — ОБЯЗАТЕЛЬНО)",
+    "Копия СНИЛС",
+    "При наличии льгот — копии и оригиналы документов, подтверждающих право на льготы",
+  ];
   const resetRegistration = () => {
     setSelectedDate(null);
     setSelectedTime(null);
@@ -170,14 +186,73 @@ export default function App() {
         </section>
 
         <aside className="space-y-4">
+          {/* Контакты — первым */}
           <Card className="p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <FileText className="h-5 w-5" style={{ color: BLUE }} />
-              <h2 className="text-base font-semibold">Необходимые документы</h2>
+            <div className="flex items-center gap-2 mb-2">
+              <Phone className="h-5 w-5" style={{ color: BLUE }} />
+              <h2 className="text-base font-semibold">Контакты</h2>
             </div>
-            <ul className="space-y-3 text-sm text-gray-600">
-              {DOCUMENTS.map((doc, i) => (
-                <li key={doc} className="flex gap-3">
+            <div className="text-sm text-gray-600 space-y-1">
+              <div>График работы приёмной комиссии:</div>
+              <div>Понедельник — пятница: 9:00 до 15:00</div>
+              <div className="mt-1">Тел.: 8-915-730-07-23</div>
+              <div>Адрес: г. Тверь, наб. реки Лазури, 1, корп. 1</div>
+            </div>
+          </Card>
+
+          {/* Запись доступна */}
+          <Card className="p-5">
+            <div className="flex items-center gap-2 mb-2">
+              <CalendarDays className="h-5 w-5" style={{ color: BLUE }} />
+              <h2 className="text-base font-semibold">Запись доступна</h2>
+            </div>
+            <div className="text-sm text-gray-600 space-y-1">
+              <div>Запись открыта с июня по август, только в рабочие дни (понедельник–пятница).</div>
+              <div className="mt-1 font-medium text-gray-700">
+                Возможность подачи заявления и документов в электронном формате — отсутствует.
+              </div>
+            </div>
+          </Card>
+
+          {/* Документы для подачи заявления */}
+          <Card className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="h-5 w-5" style={{ color: BLUE }} />
+              <h2 className="text-base font-semibold">Документы для подачи заявления</h2>
+            </div>
+            <div className="space-y-2">
+              {(["9", "11"] as const).map((grade) => (
+                <button
+                  key={grade}
+                  onClick={() => setDocsModal(grade)}
+                  className="w-full flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 hover:border-blue-300 hover:bg-blue-50 transition"
+                >
+                  <span>После {grade === "9" ? "девятого" : "одиннадцатого"} класса</span>
+                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                </button>
+              ))}
+            </div>
+          </Card>
+
+          {/* Документы для зачисления */}
+          <Card className="p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <FileText className="h-5 w-5" style={{ color: BLUE }} />
+              <h2 className="text-base font-semibold">Документы для зачисления</h2>
+            </div>
+            <ul className="space-y-2 text-sm text-gray-600">
+              {[
+                "Документ об образовании государственного образца (оригинал + копия)",
+                "Копия паспорта — 2 шт.",
+                "Четыре фотографии 3×4 см (без головного убора)",
+                "Медицинская справка по форме 086-У*",
+                "Копия страхового медицинского полиса (2 стороны)",
+                "Копия сертификата о прививках",
+                "Копия СНИЛС",
+                "Характеристика с последнего места учёбы, датированная текущим годом",
+                "Приписное свидетельство (для юношей, достигших 17-летнего возраста)",
+              ].map((doc, i) => (
+                <li key={i} className="flex gap-3">
                   <span
                     className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
                     style={{ background: BLUE }}
@@ -189,41 +264,6 @@ export default function App() {
               ))}
             </ul>
           </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Clock className="h-5 w-5" style={{ color: BLUE }} />
-              <h2 className="text-base font-semibold">Как это работает</h2>
-            </div>
-            <ol className="space-y-2 text-sm text-gray-600">
-              <li>1. Выберите доступную дату в календаре.</li>
-              <li>2. Выберите удобное время записи.</li>
-              <li>3. Укажите ФИО и контактные данные.</li>
-            </ol>
-          </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <Phone className="h-5 w-5" style={{ color: BLUE }} />
-              <h2 className="text-base font-semibold">Контакты</h2>
-            </div>
-            <div className="text-sm text-gray-600 space-y-1">
-              <div>График работы приёмной комиссии:</div>
-              <div>Понедельник — пятница: 9:00 до 15:00</div>
-              <div className="mt-1">Тел.: 8-915-730-07-23</div>
-            </div>
-          </Card>
-
-          <Card className="p-5">
-            <div className="flex items-center gap-2 mb-2">
-              <CalendarDays className="h-5 w-5" style={{ color: BLUE }} />
-              <h2 className="text-base font-semibold">Запись доступна</h2>
-            </div>
-            <div className="text-sm text-gray-600">
-              Запись открыта с июня по август, только в рабочие дни
-              (понедельник–пятница).
-            </div>
-          </Card>
         </aside>
       </main>
 
@@ -234,6 +274,48 @@ export default function App() {
       >
         © {new Date().getFullYear()} ГБПОУ «Тверской колледж им. А.Н. Коняева»
       </footer>
+
+      {/* Модальное окно документов */}
+      {docsModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: "rgba(0,0,0,0.4)" }}
+          onClick={() => setDocsModal(null)}
+        >
+          <div
+            className="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5" style={{ color: BLUE }} />
+                <h3 className="text-base font-semibold">
+                  После {docsModal === "9" ? "девятого" : "одиннадцатого"} класса
+                </h3>
+              </div>
+              <button
+                onClick={() => setDocsModal(null)}
+                className="grid h-8 w-8 place-items-center rounded-full hover:bg-gray-100 transition"
+              >
+                <X className="h-4 w-4 text-gray-500" />
+              </button>
+            </div>
+            <ul className="space-y-3 text-sm text-gray-600">
+              {(docsModal === "9" ? DOCS_9 : DOCS_11).map((doc, i) => (
+                <li key={i} className="flex gap-3">
+                  <span
+                    className="grid h-6 w-6 shrink-0 place-items-center rounded-full text-xs font-bold text-white"
+                    style={{ background: BLUE }}
+                  >
+                    {i + 1}
+                  </span>
+                  <span>{doc}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
 
       <Toaster position="bottom-right" />
     </div>

@@ -50,9 +50,15 @@ def create_app():
             db.session.rollback()
 
         try:
-            if not Admin.query.filter_by(username="admin").first():
-                hashed_pw = generate_password_hash("admin123")
-                new_admin = Admin(username="admin", password_hash=hashed_pw)
+            admin_username = app.config["ADMIN_USERNAME"]
+            admin_password = app.config["ADMIN_PASSWORD"]
+            existing_admin = Admin.query.filter_by(username=admin_username).first()
+            if existing_admin:
+                existing_admin.password_hash = generate_password_hash(admin_password)
+                db.session.commit()
+            else:
+                hashed_pw = generate_password_hash(admin_password)
+                new_admin = Admin(username=admin_username, password_hash=hashed_pw)
                 db.session.add(new_admin)
                 db.session.commit()
         except IntegrityError:

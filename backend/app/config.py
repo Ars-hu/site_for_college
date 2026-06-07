@@ -30,3 +30,7 @@ class Config:
     CORS_ORIGINS = [
         o.strip() for o in os.environ.get("CORS_ORIGINS", "*").split(",")
     ]
+
+    # Admin credentials (used on first run to create the admin account)
+    ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")

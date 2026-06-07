@@ -87,7 +87,7 @@ export function CalendarView({
         ))}
       </div>
 
-      <div className="mt-2 grid grid-cols-7 border border-gray-200 rounded-lg overflow-hidden">
+      <div className="mt-2 grid grid-cols-7 gap-2">
         {days.map((day) => {
           const apiDate = toApiDate(day);
           const outOfMonth = day.getMonth() !== month.getMonth();
@@ -106,8 +106,10 @@ export function CalendarView({
             (!isWeekend || isOpenedWeekend);
 
           const isAvailable = inRange && !isBlocked && !isFull;
-          const cellBg = disabled
-            ? "#fafafa"
+          const cellBg = outOfMonth
+            ? "transparent"
+            : disabled
+            ? "#f3f4f6"
             : isAvailable
             ? "#d1fae5"
             : isFull && inRange
@@ -118,23 +120,24 @@ export function CalendarView({
           return (
             <button
               key={day.toISOString()}
-              disabled={disabled}
-              onClick={() => onDateSelect(day)}
-              className="min-h-20 border-b border-r border-gray-200 p-2 text-left"
+              disabled={disabled || outOfMonth}
+              onClick={() => !disabled && !outOfMonth && onDateSelect(day)}
+              className="aspect-square rounded-xl flex items-center justify-center border border-gray-200"
               style={{
                 background: cellBg,
-                color: disabled ? "#ccc" : "inherit",
-                cursor: disabled ? "not-allowed" : "pointer",
+                color: outOfMonth ? "transparent" : disabled ? "#ccc" : "inherit",
+                cursor: disabled || outOfMonth ? "not-allowed" : "pointer",
+                borderColor: outOfMonth ? "transparent" : undefined,
               }}
               onMouseEnter={(e) => {
-                if (!disabled) e.currentTarget.style.background = cellBgHover;
+                if (!disabled && !outOfMonth) e.currentTarget.style.background = cellBgHover;
               }}
               onMouseLeave={(e) => {
-                if (!disabled) e.currentTarget.style.background = cellBg;
+                if (!disabled && !outOfMonth) e.currentTarget.style.background = cellBg;
               }}
             >
               <span
-                className="inline-grid h-7 w-7 place-items-center rounded-full text-sm font-semibold"
+                className="inline-grid h-9 w-9 place-items-center rounded-full text-base font-semibold"
                 style={isToday ? { background: BLUE, color: "#fff" } : {}}
               >
                 {day.getDate()}
