@@ -10,6 +10,11 @@ const MONTH_NAMES = [
   "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
 ];
 
+const MONTH_NAMES_lower = [
+  "январь", "февраль", "март", "апрель", "май", "июнь",
+  "июль", "август", "сентябрь", "октябрь", "ноябрь", "декабрь",
+];
+
 export function MonthsTab({
   token,
   onAuthError,
@@ -93,23 +98,41 @@ export function MonthsTab({
         {months.filter((m) => !isPastMonth(m.year, m.month)).length === 0 ? (
           <p className="text-sm text-gray-400 italic">Нет доступных месяцев — запись закрыта.</p>
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {months.filter((m) => !isPastMonth(m.year, m.month)).map((m) => (
-              <div
-                key={`${m.year}-${m.month}`}
-                className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-white"
-                style={{ background: BLUE }}
-              >
-                <span>{MONTH_NAMES[m.month - 1]} {m.year}</span>
-                <button
-                  onClick={() => handleRemove(m.year, m.month)}
-                  className="grid h-4 w-4 place-items-center rounded-full hover:bg-white/20 transition"
-                  title="Удалить месяц"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              </div>
-            ))}
+          <div className="space-y-3">
+            {Object.entries(
+              months
+                .filter((m) => !isPastMonth(m.year, m.month))
+                .reduce<Record<number, AllowedMonth[]>>((acc, m) => {
+                  (acc[m.year] ??= []).push(m);
+                  return acc;
+                }, {})
+            )
+              .sort(([a], [b]) => Number(a) - Number(b))
+              .map(([year, yearMonths]) => (
+                <div key={year} className="flex items-center gap-2 flex-wrap">
+                  <span className="font-bold text-sm shrink-0" style={{ color: BLUE }}>
+                    {year}:
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 items-center">
+                    {yearMonths.map((m) => (
+                      <span
+                        key={m.month}
+                        className="inline-flex items-center justify-center gap-1 rounded-full px-2.5 py-1 text-sm text-white leading-none"
+                        style={{ background: BLUE }}
+                      >
+                        {MONTH_NAMES_lower[m.month - 1]}
+                        <button
+                          onClick={() => handleRemove(m.year, m.month)}
+                          className="inline-flex items-center justify-center h-3.5 w-3.5 rounded-full hover:bg-white/20 transition shrink-0"
+                          title="Удалить месяц"
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
           </div>
         )}
       </div>
