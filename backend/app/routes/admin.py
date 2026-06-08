@@ -1,9 +1,9 @@
 from flask import Blueprint, request, jsonify, current_app
-from app.models import db, Application, Admin, BlockedDate, SlotConfig, OpenedDate, AllowedMonth
+from app.models import db, Application, ArchivedApplication, Admin, BlockedDate, SlotConfig, OpenedDate, AllowedMonth
 from app.config import TIME_SLOTS, DEFAULT_MAX_CAPACITY
 from app.extensions import limiter
 from werkzeug.security import check_password_hash
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone, timedelta, date as date_type
 import jwt
 
 admin_bp = Blueprint("admin", __name__)
@@ -20,12 +20,50 @@ def verify_token(req):
         return None
 
 
+def archive_expired():
+    """Move past applications to ArchivedApplication. Returns count moved."""
+    from zoneinfo import ZoneInfo
+    now = datetime.now(ZoneInfo("Europe/Moscow"))
+    today_str = now.strftime("%Y-%m-%d")
+    current_time = now.strftime("%H:%M")
+
+    expired = Application.query.filter(
+        db.or_(
+            Application.registration_date < today_str,
+            db.and_(
+                Application.registration_date == today_str,
+                Application.registration_time < current_time,
+            ),
+        )
+    ).all()
+
+    count = 0
+    for app in expired:
+        db.session.add(ArchivedApplication(
+            original_id=app.id,
+            fio=app.fio,
+            phone=app.phone,
+            email=app.email,
+            registration_date=app.registration_date,
+            registration_time=app.registration_time,
+            status=app.status,
+            created_at=app.created_at,
+        ))
+        db.session.delete(app)
+        count += 1
+
+    if count:
+        db.session.commit()
+    return count
+
+
 @admin_bp.route("/login", methods=["POST"])
 @limiter.limit("5 per minute")
 def login():
     data = request.json or {}
     admin = Admin.query.filter_by(username=data.get("username")).first()
     if admin and check_password_hash(admin.password_hash, data.get("password", "")):
+        archive_expired()
         token = jwt.encode(
             {
                 "user": admin.username,
@@ -151,6 +189,77 @@ def update_application_status(app_id):
     app.status = new_status
     db.session.commit()
     return jsonify({"id": app_id, "status": app.status})
+
+
+@admin_bp.route("/archive", methods=["GET"])
+def get_archive():
+    if not verify_token(request):
+        return jsonify({"message": "Нет доступа"}), 401
+
+    search = (request.args.get("search", "") or "").strip()
+    sort = request.args.get("sort", "registration_date")
+    order = request.args.get("order", "desc")
+    try:
+        page = max(1, int(request.args.get("page", 1)))
+        page_size = max(1, min(200, int(request.args.get("page_size", 25))))
+    except (TypeError, ValueError):
+        page, page_size = 1, 25
+
+    q = ArchivedApplication.query
+
+    if search:
+        like = f"%{search}%"
+        q = q.filter(
+            db.or_(
+                ArchivedApplication.fio.ilike(like),
+                ArchivedApplication.phone.ilike(like),
+                ArchivedApplication.email.ilike(like),
+                ArchivedApplication.registration_date.ilike(like),
+            )
+        )
+
+    total = q.count()
+
+    SORT_COLUMNS = {
+        "fio": ArchivedApplication.fio,
+        "registration_date": ArchivedApplication.registration_date,
+        "registration_time": ArchivedApplication.registration_time,
+        "archived_at": ArchivedApplication.archived_at,
+    }
+    col = SORT_COLUMNS.get(sort, ArchivedApplication.registration_date)
+    q = q.order_by(col.desc() if order == "desc" else col.asc())
+
+    items = q.offset((page - 1) * page_size).limit(page_size).all()
+
+    return jsonify({
+        "items": [
+            {
+                "id": a.id,
+                "original_id": a.original_id,
+                "fio": a.fio,
+                "phone": a.phone,
+                "email": a.email,
+                "registration_date": a.registration_date,
+                "registration_time": a.registration_time,
+                "status": a.status,
+                "created_at": a.created_at.isoformat(),
+                "archived_at": a.archived_at.isoformat(),
+            }
+            for a in items
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": max(1, -(-total // page_size)),
+    })
+
+
+@admin_bp.route("/archive/run", methods=["POST"])
+def run_archive():
+    if not verify_token(request):
+        return jsonify({"message": "Нет доступа"}), 401
+    count = archive_expired()
+    return jsonify({"archived": count})
 
 
 @admin_bp.route("/blocked-dates", methods=["GET"])

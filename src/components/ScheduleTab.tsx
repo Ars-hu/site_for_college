@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "react-hot-toast";
 import { CalendarDays, Minus, Plus } from "lucide-react";
-import { getBlockedDates, getSlotConfigs, toggleDate, toggleWeekend, updateSlot } from "../lib/api";
+import { getAdminAllowedMonths, getBlockedDates, getSlotConfigs, toggleDate, toggleWeekend, updateSlot } from "../lib/api";
+import type { AllowedMonth } from "../lib/api";
 import { BLUE, BLUE_LIGHT, TIME_SLOTS, WEEK_DAYS } from "../lib/constants";
 import { formatDisplayDate, isSameDate, normalizeToday, startOfCalendar, toApiDate } from "../lib/utils";
 import { MonthNav } from "./MonthNav";
@@ -22,6 +23,14 @@ export function ScheduleTab({
   >({});
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [togglingDate, setTogglingDate] = useState(false);
+
+  const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
+
+  useEffect(() => {
+    getAdminAllowedMonths(token)
+      .then(setAllowedMonths)
+      .catch(() => {});
+  }, [token]);
 
   useEffect(() => {
     getBlockedDates(token)
@@ -117,6 +126,42 @@ export function ScheduleTab({
   };
 
   const today = normalizeToday();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  // Set of "YYYY-M" for fast lookup
+  const allowedMonthsSet = useMemo(
+    () => new Set(allowedMonths.map((m) => `${m.year}-${m.month}`)),
+    [allowedMonths]
+  );
+
+  const isMonthAllowed = (d: Date) => {
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const isPast = y < currentYear || (y === currentYear && m < currentMonth);
+    if (isPast) return false;
+    return allowedMonthsSet.has(`${y}-${m}`);
+  };
+
+  const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1);
+  const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+  const canGoBack = isMonthAllowed(prevMonth);
+  const canGoForward = isMonthAllowed(nextMonth);
+
+  // If current displayed month is not allowed, snap to first allowed future month
+  useEffect(() => {
+    if (allowedMonths.length === 0) return;
+    if (!isMonthAllowed(month)) {
+      const future = allowedMonths
+        .filter((m) => !(m.year < currentYear || (m.year === currentYear && m.month < currentMonth)))
+        .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+      if (future.length > 0) {
+        setMonth(new Date(future[0].year, future[0].month - 1, 1));
+      }
+    }
+  }, [allowedMonths]);
+
   const blockedSet = useMemo(() => new Set(blockedDates), [blockedDates]);
   const openedWeekendsSet = useMemo(() => new Set(openedWeekends), [openedWeekends]);
   const days = useMemo(() => {
@@ -146,7 +191,7 @@ export function ScheduleTab({
           <h2 className="text-lg font-semibold capitalize" style={{ color: BLUE }}>
             {title}
           </h2>
-          <MonthNav month={month} onMonthChange={setMonth} />
+          <MonthNav month={month} onMonthChange={setMonth} canGoBack={canGoBack} canGoForward={canGoForward} />
         </div>
         <p className="text-xs text-gray-400 mb-3">
           Нажмите на дату для управления. Серый — закрыта для записи.
@@ -162,10 +207,12 @@ export function ScheduleTab({
             const apiDate = toApiDate(day);
             const blocked = blockedSet.has(apiDate);
             const isPast = day < today;
+            const isMonthOk = isMonthAllowed(month);
             const isSelected = apiDate === selectedDate;
             const isToday = isSameDate(day, today);
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const isOpenedWeekend = isWeekend && openedWeekendsSet.has(apiDate);
+            const disabled = outOfMonth || isPast || !isMonthOk;
 
             let bg = "#fff";
             if (outOfMonth) bg = "transparent";
@@ -177,21 +224,21 @@ export function ScheduleTab({
             return (
               <button
                 key={day.toISOString()}
-                disabled={outOfMonth}
-                onClick={() => !outOfMonth && handleDayClick(apiDate)}
+                disabled={disabled}
+                onClick={() => !disabled && handleDayClick(apiDate)}
                 className="aspect-square rounded-xl flex flex-col items-center justify-center gap-0.5 border border-gray-200"
                 style={{
                   background: bg,
                   color: outOfMonth
                     ? "transparent"
-                    : isPast
+                    : isPast || !isMonthOk
                     ? "#aaa"
                     : blocked
                     ? "#888"
                     : isWeekend && !isOpenedWeekend
                     ? "#bbb"
                     : "#222",
-                  cursor: outOfMonth ? "default" : "pointer",
+                  cursor: disabled ? "default" : "pointer",
                   borderColor: outOfMonth ? "transparent" : isSelected ? BLUE : undefined,
                   outline: isSelected ? `2px solid ${BLUE}` : "none",
                   outlineOffset: "-2px",

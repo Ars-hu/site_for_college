@@ -17,11 +17,16 @@ export function MonthsTab({
   token: string;
   onAuthError: () => void;
 }) {
-  const currentYear = new Date().getFullYear();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 1-12
   const [months, setMonths] = useState<AllowedMonth[]>([]);
   const [newYear, setNewYear] = useState(currentYear);
-  const [newMonth, setNewMonth] = useState(1);
+  const [newMonth, setNewMonth] = useState(currentMonth);
   const [adding, setAdding] = useState(false);
+
+  const isPastMonth = (year: number, month: number) =>
+    year < currentYear || (year === currentYear && month < currentMonth);
 
   useEffect(() => {
     getAdminAllowedMonths(token)
@@ -33,9 +38,8 @@ export function MonthsTab({
   }, [token, onAuthError]);
 
   const handleAdd = async () => {
-    const already = months.some((m) => m.year === newYear && m.month === newMonth);
-    if (already) {
-      toast.error("Этот месяц уже добавлен");
+    if (isPastMonth(newYear, newMonth)) {
+      toast.error("Нельзя добавить прошедший месяц");
       return;
     }
     setAdding(true);
@@ -62,7 +66,17 @@ export function MonthsTab({
     }
   };
 
-  const yearOptions = [currentYear - 1, currentYear, currentYear + 1];
+  const yearOptions = [currentYear, currentYear + 1];
+
+  // Months available in selector depend on selected year
+  const availableMonths = MONTH_NAMES.map((name, i) => ({ name, value: i + 1 })).filter(
+    ({ value }) => !isPastMonth(newYear, value)
+  );
+
+  // If current selection became past after year change, reset to first available
+  const safeNewMonth = availableMonths.find((m) => m.value === newMonth)
+    ? newMonth
+    : availableMonths[0]?.value ?? currentMonth;
 
   return (
     <div className="max-w-lg">
@@ -76,11 +90,11 @@ export function MonthsTab({
         <p className="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-2">
           Открытые месяцы
         </p>
-        {months.length === 0 ? (
+        {months.filter((m) => !isPastMonth(m.year, m.month)).length === 0 ? (
           <p className="text-sm text-gray-400 italic">Нет доступных месяцев — запись закрыта.</p>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {months.map((m) => (
+            {months.filter((m) => !isPastMonth(m.year, m.month)).map((m) => (
               <div
                 key={`${m.year}-${m.month}`}
                 className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-white"
@@ -108,7 +122,7 @@ export function MonthsTab({
         <div className="flex items-center gap-2 flex-wrap">
           <select
             value={newYear}
-            onChange={(e) => setNewYear(Number(e.target.value))}
+            onChange={(e) => { setNewYear(Number(e.target.value)); }}
             className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none"
             style={{ minWidth: 90 }}
           >
@@ -117,13 +131,13 @@ export function MonthsTab({
             ))}
           </select>
           <select
-            value={newMonth}
+            value={safeNewMonth}
             onChange={(e) => setNewMonth(Number(e.target.value))}
             className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:outline-none"
             style={{ minWidth: 130 }}
           >
-            {MONTH_NAMES.map((name, i) => (
-              <option key={i + 1} value={i + 1}>{name}</option>
+            {availableMonths.map(({ name, value }) => (
+              <option key={value} value={value}>{name}</option>
             ))}
           </select>
           <button

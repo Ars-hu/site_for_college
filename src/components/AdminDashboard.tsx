@@ -1,11 +1,12 @@
 import { useState, type ReactNode } from "react";
-import { CalendarDays, FileText, LogOut, Settings } from "lucide-react";
+import { Archive, CalendarDays, FileText, LogOut, Settings } from "lucide-react";
 import { BLUE, BLUE_DARK } from "../lib/constants";
 import { ApplicationsTab } from "./ApplicationsTab";
+import { ArchiveTab } from "./ArchiveTab";
 import { ScheduleTab } from "./ScheduleTab";
 import { MonthsTab } from "./MonthsTab";
 
-type AdminTab = "applications" | "schedule" | "months";
+type AdminTab = "applications" | "schedule" | "months" | "archive";
 
 export function AdminDashboard({
   token,
@@ -19,9 +20,10 @@ export function AdminDashboard({
   const [tab, setTab] = useState<AdminTab>("applications");
 
   const TABS: { id: AdminTab; label: string; icon: ReactNode }[] = [
-    { id: "applications", label: "Заявки", icon: <FileText className="h-4 w-4" /> },
-    { id: "schedule", label: "Расписание", icon: <Settings className="h-4 w-4" /> },
-    { id: "months", label: "Месяцы", icon: <CalendarDays className="h-4 w-4" /> },
+    { id: "applications", label: "Заявки",      icon: <FileText className="h-4 w-4" /> },
+    { id: "schedule",     label: "Расписание",  icon: <Settings className="h-4 w-4" /> },
+    { id: "months",       label: "Месяцы",      icon: <CalendarDays className="h-4 w-4" /> },
+    { id: "archive",      label: "Архив",       icon: <Archive className="h-4 w-4" /> },
   ];
 
   return (
@@ -33,12 +35,8 @@ export function AdminDashboard({
         <button
           className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium text-white"
           style={{ background: BLUE }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = BLUE_DARK;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = BLUE;
-          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = BLUE_DARK; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = BLUE; }}
           onClick={onLogout}
         >
           <LogOut className="h-4 w-4" /> Выйти
@@ -71,7 +69,11 @@ export function AdminDashboard({
         {tab === "months" && (
           <MonthsTab token={token} onAuthError={onAuthError} />
         )}
+        {tab === "archive" && (
+          <ArchiveTab token={token} onAuthError={onAuthError} />
+        )}
       </div>
     </div>
   );
 }
+

@@ -16,6 +16,20 @@ class Application(db.Model):
     status = db.Column(db.String(20), nullable=False, default="pending")
 
 
+class ArchivedApplication(db.Model):
+    """Applications moved to archive after their date/time has passed."""
+    id = db.Column(db.Integer, primary_key=True)
+    original_id = db.Column(db.Integer, nullable=False)
+    fio = db.Column(db.String(255), nullable=False)
+    phone = db.Column(db.String(20), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    registration_date = db.Column(db.String(20), nullable=False, index=True)
+    registration_time = db.Column(db.String(10), nullable=False)
+    status = db.Column(db.String(20), nullable=False, default="pending")
+    created_at = db.Column(db.DateTime, nullable=False)
+    archived_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
 class Admin(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(50), unique=True, nullable=False)

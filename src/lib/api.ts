@@ -170,6 +170,47 @@ export function updateSlot(
   });
 }
 
+export type ArchivedApplication = {
+  id: number;
+  original_id: number;
+  fio: string;
+  phone: string;
+  email: string;
+  registration_date: string;
+  registration_time: string;
+  status: "pending" | "confirmed" | "rejected";
+  created_at: string;
+  archived_at: string;
+};
+
+export type ArchivePage = {
+  items: ArchivedApplication[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+};
+
+export function getArchive(token: string, params: ApplicationsParams = {}) {
+  const qs = new URLSearchParams();
+  if (params.page)      qs.set("page",      String(params.page));
+  if (params.page_size) qs.set("page_size", String(params.page_size));
+  if (params.search)    qs.set("search",    params.search);
+  if (params.sort)      qs.set("sort",      params.sort);
+  if (params.order)     qs.set("order",     params.order);
+  const query = qs.toString() ? `?${qs}` : "";
+  return request<ArchivePage>(`/api/admin/archive${query}`, {
+    headers: { Authorization: token },
+  });
+}
+
+export function runArchive(token: string) {
+  return request<{ archived: number }>("/api/admin/archive/run", {
+    method: "POST",
+    headers: { Authorization: token },
+  });
+}
+
 export function deleteApplication(token: string, id: number) {
   return request<{ deleted: boolean; id: number }>(
     `/api/admin/applications/${id}`,

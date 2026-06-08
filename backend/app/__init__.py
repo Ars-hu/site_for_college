@@ -40,6 +40,13 @@ def create_app():
         except IntegrityError:
             db.session.rollback()
 
+        # Archive any already-expired applications on startup
+        try:
+            from app.routes.admin import archive_expired
+            archive_expired()
+        except Exception:
+            pass
+
         try:
             if not AllowedMonth.query.first():
                 year = datetime.now(timezone.utc).year
