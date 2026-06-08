@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { BLUE, BLUE_LIGHT, WEEK_DAYS } from "../lib/constants";
+import { BLUE, BLUE_LIGHT, TIME_SLOTS, WEEK_DAYS } from "../lib/constants";
 import { isSameDate, normalizeToday, startOfCalendar, toApiDate } from "../lib/utils";
 import { MonthNav } from "./MonthNav";
 import type { AllowedMonth } from "../lib/api";
@@ -108,10 +108,17 @@ export function CalendarView({
           const notAllowed = !allowedSet.has(ymKey(day.getFullYear(), day.getMonth() + 1));
           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
           const isOpenedWeekend = isWeekend && openedWeekendsSet.has(apiDate);
+          const isToday = isSameDate(day, today);
+          const isAllSlotsPast = isToday && (() => {
+            const now = new Date();
+            const lastSlot = TIME_SLOTS[TIME_SLOTS.length - 1];
+            const lastSlotDate = new Date(day);
+            lastSlotDate.setHours(parseInt(lastSlot.split(":")[0]), parseInt(lastSlot.split(":")[1]), 0, 0);
+            return lastSlotDate <= now;
+          })();
           const disabled =
             outOfMonth || isPast || isBlocked || isFull || notAllowed ||
-            (isWeekend && !isOpenedWeekend);
-          const isToday = isSameDate(day, today);
+            (isWeekend && !isOpenedWeekend) || isAllSlotsPast;
 
           const inRange = !outOfMonth && !isPast && !notAllowed &&
             (!isWeekend || isOpenedWeekend);

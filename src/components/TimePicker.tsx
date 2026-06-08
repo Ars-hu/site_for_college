@@ -36,6 +36,13 @@ export function TimePicker({
     };
   }, [selectedDate]);
 
+  const now = new Date();
+  const availableSlots = TIME_SLOTS.filter((time) => {
+    const slotDate = new Date(selectedDate);
+    slotDate.setHours(parseInt(time.split(":")[0]), parseInt(time.split(":")[1]), 0, 0);
+    return slotDate > now;
+  });
+
   return (
     <div>
       <button
@@ -67,14 +74,13 @@ export function TimePicker({
         <div className="rounded-lg border border-gray-300 p-8 text-center font-medium text-gray-500 bg-gray-50">
           Запись на эту дату закрыта. Пожалуйста, выберите другой день.
         </div>
+      ) : availableSlots.length === 0 ? (
+        <div className="rounded-lg border border-gray-300 p-8 text-center font-medium text-gray-500 bg-gray-50">
+          Все слоты на этот день уже прошли. Пожалуйста, выберите другой день.
+        </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {TIME_SLOTS.filter((time) => {
-            const now = new Date();
-            const slotDate = new Date(selectedDate);
-            slotDate.setHours(parseInt(time.split(":")[0]), parseInt(time.split(":")[1]), 0, 0);
-            return slotDate > now;
-          }).map((time) => {
+          {availableSlots.map((time) => {
             const info = slots[time];
             const occupied = info?.occupied ?? 0;
             const maxCap = info?.max_capacity ?? 3;
