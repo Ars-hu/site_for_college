@@ -5,7 +5,7 @@ import { useLocation } from "react-router-dom";
 import { getDatesStatus, getAllowedMonths } from "./lib/api";
 import type { AllowedMonth } from "./lib/api";
 import { BLUE } from "./lib/constants";
-import { Card } from "./components/Card";
+import { Card } from "./components/ui/Card";
 import { RegistrationFlow } from "./components/RegistrationFlow";
 import { AdminPanel } from "./components/AdminPanel";
 import { ErrorBoundary } from "./components/ErrorBoundary";

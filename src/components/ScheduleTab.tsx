@@ -5,7 +5,7 @@ import { getAdminAllowedMonths, getBlockedDates, getSlotConfigs, toggleDate, tog
 import type { AllowedMonth } from "../lib/api";
 import { BLUE, BLUE_LIGHT, TIME_SLOTS, WEEK_DAYS } from "../lib/constants";
 import { formatDisplayDate, isSameDate, normalizeToday, startOfCalendar, toApiDate } from "../lib/utils";
-import { MonthNav } from "./MonthNav";
+import { MonthNav } from "./ui/MonthNav";
 
 export function ScheduleTab({
   token,

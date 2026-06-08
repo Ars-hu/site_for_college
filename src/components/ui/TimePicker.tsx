@@ -1,9 +1,9 @@
 import { useEffect, useState } from "react";
 import { toast } from "react-hot-toast";
 import { ArrowLeft, CalendarDays, Clock } from "lucide-react";
-import { type SlotInfo, getSlotsStatus } from "../lib/api";
-import { BLUE, BLUE_LIGHT, TIME_SLOTS } from "../lib/constants";
-import { formatDisplayDate, toApiDate } from "../lib/utils";
+import { type SlotInfo, getSlotsStatus } from "../../lib/api";
+import { BLUE, BLUE_LIGHT, TIME_SLOTS } from "../../lib/constants";
+import { formatDisplayDate, toApiDate } from "../../lib/utils";
 
 export function TimePicker({
   selectedDate,

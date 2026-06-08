@@ -33,7 +33,7 @@ import {
   startOfCalendar,
   toApiDate,
 } from "../lib/utils";
-import { MonthNav } from "./MonthNav";
+import { MonthNav } from "./ui/MonthNav";
 
 type AppView = "list" | "calendar";
 type SortField = ApplicationsParams["sort"] & string;

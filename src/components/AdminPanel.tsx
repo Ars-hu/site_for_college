@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { toast } from "react-hot-toast";
-import { Card } from "./Card";
+import { Card } from "./ui/Card";
 import { AdminLogin } from "./AdminLogin";
 import { AdminDashboard } from "./AdminDashboard";
 

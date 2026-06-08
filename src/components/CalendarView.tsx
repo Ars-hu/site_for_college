@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { BLUE, BLUE_LIGHT, TIME_SLOTS, WEEK_DAYS } from "../lib/constants";
 import { isSameDate, normalizeToday, startOfCalendar, toApiDate } from "../lib/utils";
-import { MonthNav } from "./MonthNav";
+import { MonthNav } from "./ui/MonthNav";
 import type { AllowedMonth } from "../lib/api";
 
 function ymKey(year: number, month: number) {

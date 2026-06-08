@@ -2,6 +2,7 @@ from flask import Blueprint, request, jsonify, current_app
 from app.models import db, Application, ArchivedApplication, Admin, BlockedDate, SlotConfig, OpenedDate, AllowedMonth
 from app.config import TIME_SLOTS, DEFAULT_MAX_CAPACITY
 from app.extensions import limiter
+from app.services.archive import archive_expired
 from werkzeug.security import check_password_hash
 from datetime import datetime, timezone, timedelta, date as date_type
 import jwt
@@ -18,43 +19,6 @@ def verify_token(req):
         return token
     except Exception:
         return None
-
-
-def archive_expired():
-    """Move past applications to ArchivedApplication. Returns count moved."""
-    from zoneinfo import ZoneInfo
-    now = datetime.now(ZoneInfo("Europe/Moscow"))
-    today_str = now.strftime("%Y-%m-%d")
-    current_time = now.strftime("%H:%M")
-
-    expired = Application.query.filter(
-        db.or_(
-            Application.registration_date < today_str,
-            db.and_(
-                Application.registration_date == today_str,
-                Application.registration_time < current_time,
-            ),
-        )
-    ).all()
-
-    count = 0
-    for app in expired:
-        db.session.add(ArchivedApplication(
-            original_id=app.id,
-            fio=app.fio,
-            phone=app.phone,
-            email=app.email,
-            registration_date=app.registration_date,
-            registration_time=app.registration_time,
-            status=app.status,
-            created_at=app.created_at,
-        ))
-        db.session.delete(app)
-        count += 1
-
-    if count:
-        db.session.commit()
-    return count
 
 
 @admin_bp.route("/login", methods=["POST"])
@@ -81,7 +45,6 @@ def get_applications():
     if not verify_token(request):
         return jsonify({"message": "Нет доступа"}), 401
 
-    # ── Query params ──────────────────────────────────────────────────────────
     search   = (request.args.get("search", "") or "").strip()
     sort     = request.args.get("sort", "registration_date")
     order    = request.args.get("order", "asc")
@@ -91,10 +54,8 @@ def get_applications():
     except (TypeError, ValueError):
         page, page_size = 1, 25
 
-    # ── Base query ────────────────────────────────────────────────────────────
     q = Application.query
 
-    # ── Search (fio, phone, email, registration_date, registration_time) ──────
     if search:
         like = f"%{search}%"
         q = q.filter(
@@ -107,10 +68,8 @@ def get_applications():
             )
         )
 
-    # ── Total count (before pagination, after search) ─────────────────────────
     total = q.count()
 
-    # ── Sort ──────────────────────────────────────────────────────────────────
     SORT_COLUMNS = {
         "fio":               Application.fio,
         "registration_date": Application.registration_date,
@@ -137,7 +96,6 @@ def get_applications():
             else Application.registration_date.desc()
         )
 
-    # ── Pagination ────────────────────────────────────────────────────────────
     apps = q.offset((page - 1) * page_size).limit(page_size).all()
 
     result = [

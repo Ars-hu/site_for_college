@@ -43,7 +43,7 @@ def create_app():
 
         # Archive any already-expired applications on startup
         try:
-            from app.routes.admin import archive_expired
+            from app.services.archive import archive_expired
             archive_expired()
         except Exception:
             pass
@@ -76,7 +76,7 @@ def create_app():
     def scheduled_archive():
         with app.app_context():
             try:
-                from app.routes.admin import archive_expired
+                from app.services.archive import archive_expired
                 count = archive_expired()
                 if count:
                     logger.info("Scheduler: archived %d application(s)", count)

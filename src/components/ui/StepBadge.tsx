@@ -1,5 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
-import { BLUE, BLUE_DARK } from "../lib/constants";
+import { BLUE, BLUE_DARK } from "../../lib/constants";
 
 export function StepBadge({
   active,
