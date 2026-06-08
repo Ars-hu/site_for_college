@@ -18,7 +18,9 @@ import {
   type Application,
   type ApplicationsParams,
   type ApplicationsPage,
+  type AllowedMonth,
   deleteApplication,
+  getAdminAllowedMonths,
   getApplications,
   updateApplicationStatus,
 } from "../lib/api";
@@ -50,6 +52,7 @@ export function ApplicationsTab({
 }) {
   const [view, setView] = useState<AppView>("list");
 
+  // List state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState("");
@@ -60,11 +63,14 @@ export function ApplicationsTab({
   const [data, setData] = useState<ApplicationsPage | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Calendar state — uses a separate full-list fetch
   const [calMonth, setCalMonth] = useState(() => new Date());
   const [calDate, setCalDate] = useState<string | null>(null);
   const [allApps, setAllApps] = useState<Application[]>([]);
   const [calLoading, setCalLoading] = useState(false);
+  const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
 
+  // Debounce search input
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -75,6 +81,7 @@ export function ApplicationsTab({
     }, SEARCH_DEBOUNCE_MS);
   };
 
+  // Fetch paginated list
   useEffect(() => {
     if (view !== "list") return;
     let active = true;
@@ -96,12 +103,21 @@ export function ApplicationsTab({
     return () => { active = false; };
   }, [token, onAuthError, view, page, pageSize, debouncedSearch, sortField, sortDir]);
 
+  // Fetch all apps for calendar (no pagination)
   useEffect(() => {
     if (view !== "calendar") return;
     let active = true;
     setCalLoading(true);
-    getApplications(token, { page: 1, page_size: 10000 })
-      .then((d) => { if (active) setAllApps(d.items); })
+    Promise.all([
+      getApplications(token, { page: 1, page_size: 10000 }),
+      getAdminAllowedMonths(token),
+    ])
+      .then(([appsData, months]) => {
+        if (active) {
+          setAllApps(appsData.items);
+          setAllowedMonths(months);
+        }
+      })
       .catch((e) => {
         if (!active) return;
         if (e.message === "Нет доступа" || e.message?.includes("401")) onAuthError();
@@ -125,9 +141,14 @@ export function ApplicationsTab({
     try {
       await deleteApplication(token, id);
       toast.success("Запись удалена");
+      // Refetch: trigger by bumping page or resetting state
       setData((prev) =>
         prev
-          ? { ...prev, items: prev.items.filter((a) => a.id !== id), total: prev.total - 1 }
+          ? {
+              ...prev,
+              items: prev.items.filter((a) => a.id !== id),
+              total: prev.total - 1,
+            }
           : prev
       );
       setAllApps((prev) => prev.filter((a) => a.id !== id));
@@ -136,7 +157,10 @@ export function ApplicationsTab({
     }
   };
 
-  const handleStatus = async (id: number, status: "confirmed" | "rejected" | "pending") => {
+  const handleStatus = async (
+    id: number,
+    status: "confirmed" | "rejected"
+  ) => {
     try {
       await updateApplicationStatus(token, id, status);
       const label = status === "confirmed" ? "подтверждена" : "отклонена";
@@ -197,6 +221,7 @@ export function ApplicationsTab({
 
   return (
     <div>
+      {/* Top bar */}
       <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-gray-500">
           Всего записей: {view === "list" ? total : allApps.length}
@@ -229,6 +254,7 @@ export function ApplicationsTab({
 
       {view === "list" ? (
         <div>
+          {/* Search */}
           <div className="relative mb-4 max-w-md">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
@@ -241,6 +267,7 @@ export function ApplicationsTab({
             />
           </div>
 
+          {/* Table */}
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full min-w-[700px] border-collapse text-left text-sm">
               <thead style={{ background: BLUE, color: "#fff" }}>
@@ -314,6 +341,7 @@ export function ApplicationsTab({
             </table>
           </div>
 
+          {/* Pagination */}
           {!loading && total > 0 && (
             <Pagination
               page={page}
@@ -335,6 +363,7 @@ export function ApplicationsTab({
           onMonthChange={setCalMonth}
           selectedDate={calDate}
           onDateSelect={setCalDate}
+          allowedMonths={allowedMonths}
         />
       )}
     </div>
@@ -422,9 +451,9 @@ function buildPageRange(current: number, total: number): (number | "…")[] {
 // ─── StatusBadge ─────────────────────────────────────────────────────────────
 
 const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
-  pending:   { label: "Ожидает",      bg: "#fef9c3", color: "#854d0e" },
+  pending:   { label: "Ожидает",     bg: "#fef9c3", color: "#854d0e" },
   confirmed: { label: "Подтверждена", bg: "#dcfce7", color: "#166534" },
-  rejected:  { label: "Отклонена",    bg: "#fee2e2", color: "#991b1b" },
+  rejected:  { label: "Отклонена",   bg: "#fee2e2", color: "#991b1b" },
 };
 
 function StatusBadge({ status }: { status: string }) {
@@ -487,11 +516,45 @@ function SortTh({ label, field, sortField, sortDir, onSort }: {
 
 // ─── Calendar view ────────────────────────────────────────────────────────────
 
-function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, onDateSelect }: {
+function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, onDateSelect, allowedMonths }: {
   byDate: Record<string, Application[]>; loading: boolean; month: Date;
   onMonthChange: (d: Date) => void; selectedDate: string | null; onDateSelect: (d: string | null) => void;
+  allowedMonths: AllowedMonth[];
 }) {
   const today = normalizeToday();
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  const allowedSet = useMemo(
+    () => new Set(allowedMonths.map((m) => `${m.year}-${m.month}`)),
+    [allowedMonths]
+  );
+
+  const isMonthAllowed = (d: Date) => {
+    const y = d.getFullYear();
+    const m = d.getMonth() + 1;
+    const isPast = y < currentYear || (y === currentYear && m < currentMonth);
+    if (isPast) return false;
+    return allowedSet.has(`${y}-${m}`);
+  };
+
+  const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1);
+  const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+  const canGoBack = isMonthAllowed(prevMonth);
+  const canGoForward = isMonthAllowed(nextMonth);
+
+  // Snap to first allowed month if current is not allowed
+  useEffect(() => {
+    if (allowedMonths.length === 0) return;
+    if (!isMonthAllowed(month)) {
+      const future = allowedMonths
+        .filter((m) => !(m.year < currentYear || (m.year === currentYear && m.month < currentMonth)))
+        .sort((a, b) => a.year !== b.year ? a.year - b.year : a.month - b.month);
+      if (future.length > 0) onMonthChange(new Date(future[0].year, future[0].month - 1, 1));
+    }
+  }, [allowedMonths]);
+
   const days = useMemo(() => {
     const start = startOfCalendar(month);
     return Array.from({ length: 42 }, (_, i) => {
@@ -516,7 +579,7 @@ function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, 
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold capitalize" style={{ color: BLUE }}>{title}</h2>
-          <MonthNav month={month} onMonthChange={onMonthChange} />
+          <MonthNav month={month} onMonthChange={onMonthChange} canGoBack={canGoBack} canGoForward={canGoForward} />
         </div>
         <p className="text-xs text-gray-400 mb-3">Нажмите на дату, чтобы увидеть записи на этот день.</p>
         <div className="grid grid-cols-7 pb-2 text-center text-xs font-semibold uppercase text-gray-400 border-b border-gray-200">
@@ -531,7 +594,8 @@ function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, 
             const isToday = isSameDate(day, today);
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const hasApps = count > 0 && !outOfMonth;
-            const unavailable = outOfMonth || (isWeekend && !hasApps);
+            const isAllowed = isMonthAllowed(month);
+            const unavailable = outOfMonth || !isAllowed || (isWeekend && !hasApps);
             const bgBase = outOfMonth ? "transparent" : hasApps ? "#bfdbfe" : isWeekend ? "#f3f4f6" : "#fff";
             const bgHover = unavailable ? bgBase : "#eff6ff";
             return (
