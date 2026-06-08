@@ -539,10 +539,30 @@ function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, 
     return allowedSet.has(`${y}-${m}`);
   };
 
-  const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1);
-  const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
-  const canGoBack = isMonthAllowed(prevMonth);
-  const canGoForward = isMonthAllowed(nextMonth);
+  const findPrevAllowed = (): Date | null => {
+    let d = new Date(month.getFullYear(), month.getMonth() - 1, 1);
+    for (let i = 0; i < 24; i++) {
+      if (isMonthAllowed(d)) return d;
+      d = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+    }
+    return null;
+  };
+
+  const findNextAllowed = (): Date | null => {
+    let d = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+    for (let i = 0; i < 24; i++) {
+      if (isMonthAllowed(d)) return d;
+      d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    }
+    return null;
+  };
+
+  const prevAllowed = findPrevAllowed();
+  const nextAllowed = findNextAllowed();
+  const canGoBack = prevAllowed !== null;
+  const canGoForward = nextAllowed !== null;
+  const handlePrev = () => { if (prevAllowed) onMonthChange(prevAllowed); };
+  const handleNext = () => { if (nextAllowed) onMonthChange(nextAllowed); };
 
   // Snap to first allowed month if current is not allowed
   useEffect(() => {
@@ -579,7 +599,7 @@ function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, 
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold capitalize" style={{ color: BLUE }}>{title}</h2>
-          <MonthNav month={month} onMonthChange={onMonthChange} canGoBack={canGoBack} canGoForward={canGoForward} />
+          <MonthNav month={month} onMonthChange={onMonthChange} canGoBack={canGoBack} canGoForward={canGoForward} onPrev={handlePrev} onNext={handleNext} />
         </div>
         <p className="text-xs text-gray-400 mb-3">Нажмите на дату, чтобы увидеть записи на этот день.</p>
         <div className="grid grid-cols-7 pb-2 text-center text-xs font-semibold uppercase text-gray-400 border-b border-gray-200">

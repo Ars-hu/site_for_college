@@ -146,8 +146,31 @@ export function ScheduleTab({
 
   const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1);
   const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
-  const canGoBack = isMonthAllowed(prevMonth);
-  const canGoForward = isMonthAllowed(nextMonth);
+
+  const findPrevAllowed = (): Date | null => {
+    let d = new Date(month.getFullYear(), month.getMonth() - 1, 1);
+    for (let i = 0; i < 24; i++) {
+      if (isMonthAllowed(d)) return d;
+      d = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+    }
+    return null;
+  };
+
+  const findNextAllowed = (): Date | null => {
+    let d = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+    for (let i = 0; i < 24; i++) {
+      if (isMonthAllowed(d)) return d;
+      d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    }
+    return null;
+  };
+
+  const prevAllowed = findPrevAllowed();
+  const nextAllowed = findNextAllowed();
+  const canGoBack = prevAllowed !== null;
+  const canGoForward = nextAllowed !== null;
+  const handlePrev = () => { if (prevAllowed) setMonth(prevAllowed); };
+  const handleNext = () => { if (nextAllowed) setMonth(nextAllowed); };
 
   // If current displayed month is not allowed, snap to first allowed future month
   useEffect(() => {
@@ -191,7 +214,7 @@ export function ScheduleTab({
           <h2 className="text-lg font-semibold capitalize" style={{ color: BLUE }}>
             {title}
           </h2>
-          <MonthNav month={month} onMonthChange={setMonth} canGoBack={canGoBack} canGoForward={canGoForward} />
+          <MonthNav month={month} onMonthChange={setMonth} canGoBack={canGoBack} canGoForward={canGoForward} onPrev={handlePrev} onNext={handleNext} />
         </div>
         <p className="text-xs text-gray-400 mb-3">
           Нажмите на дату для управления. Серый — закрыта для записи.

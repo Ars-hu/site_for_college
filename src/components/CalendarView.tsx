@@ -46,10 +46,30 @@ export function CalendarView({
     month: "long",
     year: "numeric",
   }).format(month);
-  const prevMonth = new Date(month.getFullYear(), month.getMonth() - 1, 1);
-  const nextMonth = new Date(month.getFullYear(), month.getMonth() + 1, 1);
-  const canGoBack = allowedSet.has(ymKey(prevMonth.getFullYear(), prevMonth.getMonth() + 1));
-  const canGoForward = allowedSet.has(ymKey(nextMonth.getFullYear(), nextMonth.getMonth() + 1));
+  const findPrevAllowed = (): Date | null => {
+    let d = new Date(month.getFullYear(), month.getMonth() - 1, 1);
+    for (let i = 0; i < 24; i++) {
+      if (allowedSet.has(ymKey(d.getFullYear(), d.getMonth() + 1))) return d;
+      d = new Date(d.getFullYear(), d.getMonth() - 1, 1);
+    }
+    return null;
+  };
+
+  const findNextAllowed = (): Date | null => {
+    let d = new Date(month.getFullYear(), month.getMonth() + 1, 1);
+    for (let i = 0; i < 24; i++) {
+      if (allowedSet.has(ymKey(d.getFullYear(), d.getMonth() + 1))) return d;
+      d = new Date(d.getFullYear(), d.getMonth() + 1, 1);
+    }
+    return null;
+  };
+
+  const prevAllowed = findPrevAllowed();
+  const nextAllowed = findNextAllowed();
+  const canGoBack = prevAllowed !== null;
+  const canGoForward = nextAllowed !== null;
+  const handlePrev = () => { if (prevAllowed) onMonthChange(prevAllowed); };
+  const handleNext = () => { if (nextAllowed) onMonthChange(nextAllowed); };
 
   return (
     <div>
@@ -67,6 +87,8 @@ export function CalendarView({
           onMonthChange={onMonthChange}
           canGoBack={canGoBack}
           canGoForward={canGoForward}
+          onPrev={handlePrev}
+          onNext={handleNext}
         />
       </div>
 
