@@ -69,7 +69,12 @@ export function TimePicker({
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2">
-          {TIME_SLOTS.map((time) => {
+          {TIME_SLOTS.filter((time) => {
+            const now = new Date();
+            const slotDate = new Date(selectedDate);
+            slotDate.setHours(parseInt(time.split(":")[0]), parseInt(time.split(":")[1]), 0, 0);
+            return slotDate > now;
+          }).map((time) => {
             const info = slots[time];
             const occupied = info?.occupied ?? 0;
             const maxCap = info?.max_capacity ?? 3;

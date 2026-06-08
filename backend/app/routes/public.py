@@ -4,6 +4,7 @@ from app.models import db, Application, BlockedDate, SlotConfig, OpenedDate, All
 from app.config import TIME_SLOTS, DEFAULT_MAX_CAPACITY
 from app.extensions import limiter
 from datetime import datetime
+from zoneinfo import ZoneInfo
 
 public_bp = Blueprint("public", __name__)
 
@@ -109,6 +110,16 @@ def register():
             date_obj = datetime.strptime(date, "%Y-%m-%d")
         except ValueError:
             return jsonify({"error": "Некорректный формат даты"}), 400
+
+        # Проверка: нельзя записаться на прошедшую дату/время
+        now = datetime.now(ZoneInfo("Europe/Moscow"))
+        slot_dt_str = f"{date} {time}"
+        try:
+            slot_dt = datetime.strptime(slot_dt_str, "%Y-%m-%d %H:%M").replace(tzinfo=ZoneInfo("Europe/Moscow"))
+        except ValueError:
+            return jsonify({"error": "Некорректный формат даты или времени"}), 400
+        if slot_dt <= now:
+            return jsonify({"error": "Нельзя записаться на прошедшее время"}), 400
 
         if not AllowedMonth.query.filter_by(year=date_obj.year, month=date_obj.month).first():
             return jsonify({"error": "Запись на этот месяц недоступна"}), 400

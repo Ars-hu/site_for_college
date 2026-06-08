@@ -13,6 +13,7 @@ import {
   type ArchivePage,
   type ApplicationsParams,
   getArchive,
+  runArchive,
 } from "../lib/api";
 import { BLUE, BLUE_LIGHT } from "../lib/constants";
 import { formatDisplayDate } from "../lib/utils";
@@ -56,6 +57,14 @@ export function ArchiveTab({
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [data, setData] = useState<ArchivePage | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // Автоматически переносим просроченные записи при открытии вкладки
+  useEffect(() => {
+    runArchive(token)
+      .then((res) => { if (res.archived > 0) setReloadKey((k) => k + 1); })
+      .catch(() => {});
+  }, [token]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearch = (value: string) => {
@@ -85,7 +94,7 @@ export function ArchiveTab({
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [token, onAuthError, page, pageSize, debouncedSearch, sortField, sortDir]);
+  }, [token, onAuthError, page, pageSize, debouncedSearch, sortField, sortDir, reloadKey]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {

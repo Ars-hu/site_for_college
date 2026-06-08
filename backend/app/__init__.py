@@ -8,6 +8,7 @@ from app.extensions import limiter
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash
 from sqlalchemy.exc import IntegrityError
+from apscheduler.schedulers.background import BackgroundScheduler
 
 logger = logging.getLogger(__name__)
 
@@ -70,5 +71,20 @@ def create_app():
                 db.session.commit()
         except IntegrityError:
             db.session.rollback()
+
+    # Запускаем фоновый планировщик — архивирует просроченные записи каждые 5 минут
+    def scheduled_archive():
+        with app.app_context():
+            try:
+                from app.routes.admin import archive_expired
+                count = archive_expired()
+                if count:
+                    logger.info("Scheduler: archived %d application(s)", count)
+            except Exception as e:
+                logger.error("Scheduler archive error: %s", e)
+
+    scheduler = BackgroundScheduler(daemon=True)
+    scheduler.add_job(scheduled_archive, "interval", minutes=5)
+    scheduler.start()
 
     return app
