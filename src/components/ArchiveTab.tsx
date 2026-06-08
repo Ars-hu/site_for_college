@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
+import * as XLSX from "xlsx";
 import {
   ArrowDown,
   ArrowUp,
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
+  Download,
   Search,
 } from "lucide-react";
 import {
@@ -106,6 +108,34 @@ export function ArchiveTab({
     setPage(1);
   };
 
+  const exportXlsx = async () => {
+    try {
+      const all = await getArchive(token, {
+        page: 1,
+        page_size: 10000,
+        search: debouncedSearch || undefined,
+        sort: sortField as ApplicationsParams["sort"],
+        order: sortDir,
+      });
+      const header = ["ID", "ФИО", "Телефон", "Email", "Дата", "Время", "В архив", "Статус"];
+      const statusLabels: Record<string, string> = {
+        pending: "Ожидал", confirmed: "Подтверждён", rejected: "Отклонён",
+      };
+      const rows = all.items.map((item) => [
+        item.original_id, item.fio, item.phone, item.email,
+        item.registration_date, item.registration_time,
+        new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.archived_at)),
+        statusLabels[item.status] ?? item.status,
+      ]);
+      const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Архив");
+      XLSX.writeFile(wb, "archive.xlsx");
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
   const focusStyle = (e: React.FocusEvent<HTMLInputElement>) => { e.target.style.borderColor = BLUE; };
   const blurStyle  = (e: React.FocusEvent<HTMLInputElement>) => { e.target.style.borderColor = "#e5e7eb"; };
 
@@ -117,6 +147,12 @@ export function ArchiveTab({
     <div>
       <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-gray-500">Всего в архиве: {total}</p>
+        <button
+          className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          onClick={exportXlsx}
+        >
+          <Download className="h-4 w-4" /> Excel
+        </button>
       </div>
 
       <div className="relative mb-4 max-w-md">
@@ -158,7 +194,6 @@ export function ArchiveTab({
                 >
                   <td className="px-4 py-3">
                     <div className="font-semibold">{item.fio}</div>
-                    <div className="text-xs text-gray-400">ID {item.original_id}</div>
                   </td>
                   <td className="px-4 py-3">
                     <div>{item.phone}</div>
