@@ -61,17 +61,6 @@ export function CalendarView({
           >
             {title}
           </h2>
-          <p className="text-sm text-gray-500">
-            {allowedMonths.length > 0
-              ? `Доступна запись: ${allowedMonths
-                  .map((m) =>
-                    new Intl.DateTimeFormat("ru-RU", { month: "long" }).format(
-                      new Date(m.year, m.month - 1, 1)
-                    )
-                  )
-                  .join(", ")}, Пн–Пт.`
-              : "Запись временно недоступна."}
-          </p>
         </div>
         <MonthNav
           month={month}
@@ -108,12 +97,12 @@ export function CalendarView({
           const isAvailable = inRange && !isBlocked && !isFull;
           const cellBg = outOfMonth
             ? "transparent"
+            : isFull && inRange
+            ? "#F9E3E2"
             : disabled
             ? "#f3f4f6"
             : isAvailable
             ? "#d1fae5"
-            : isFull && inRange
-            ? "#fee2e2"
             : "#fff";
           const cellBgHover = isAvailable ? "#a7f3d0" : BLUE_LIGHT;
 
@@ -153,7 +142,7 @@ export function CalendarView({
           Есть свободные места
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "#fee2e2", border: "1px solid #fca5a5" }} />
+          <span className="inline-block h-3 w-3 rounded-sm" style={{ background: "#F9E3E2", border: "1px solid #fca5a5" }} />
           Мест нет
         </span>
         <span className="flex items-center gap-1.5">

@@ -28,7 +28,7 @@ export default function App() {
   const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
   const monthInitRef = useRef(false);
 
-  useEffect(() => {
+  const loadDatesStatus = () => {
     getDatesStatus()
       .then((d) => {
         setBlockedDates(d.blocked_dates);
@@ -36,6 +36,10 @@ export default function App() {
         setOpenedWeekends(d.opened_weekends);
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadDatesStatus();
 
     getAllowedMonths()
       .then((months) => {
@@ -156,7 +160,10 @@ export default function App() {
                   resetRegistration();
                 }
               }}
-              onSuccess={resetRegistration}
+              onSuccess={() => {
+                loadDatesStatus();
+                resetRegistration();
+              }}
             />
           )}
           </ErrorBoundary>
