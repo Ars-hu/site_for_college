@@ -111,6 +111,7 @@ def get_applications():
             "registration_date": a.registration_date,
             "registration_time": a.registration_time,
             "created_at": a.created_at.isoformat(),
+            "status": a.status,
         }
         for a in apps
     ]
@@ -122,6 +123,34 @@ def get_applications():
         "page_size":  page_size,
         "total_pages": max(1, -(-total // page_size)),  # ceil division
     })
+
+
+@admin_bp.route("/applications/<int:app_id>", methods=["DELETE"])
+def delete_application(app_id):
+    if not verify_token(request):
+        return jsonify({"message": "Нет доступа"}), 401
+    app = Application.query.get(app_id)
+    if not app:
+        return jsonify({"error": "Запись не найдена"}), 404
+    db.session.delete(app)
+    db.session.commit()
+    return jsonify({"deleted": True, "id": app_id})
+
+
+@admin_bp.route("/applications/<int:app_id>/status", methods=["PATCH"])
+def update_application_status(app_id):
+    if not verify_token(request):
+        return jsonify({"message": "Нет доступа"}), 401
+    data = request.json or {}
+    new_status = data.get("status")
+    if new_status not in ("pending", "confirmed", "rejected"):
+        return jsonify({"error": "Недопустимый статус"}), 400
+    app = Application.query.get(app_id)
+    if not app:
+        return jsonify({"error": "Запись не найдена"}), 404
+    app.status = new_status
+    db.session.commit()
+    return jsonify({"id": app_id, "status": app.status})
 
 
 @admin_bp.route("/blocked-dates", methods=["GET"])

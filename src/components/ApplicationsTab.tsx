@@ -5,18 +5,22 @@ import {
   ArrowUp,
   ArrowUpDown,
   CalendarDays,
+  Check,
   ChevronLeft,
   ChevronRight,
   Clock,
   Download,
   LayoutList,
   Search,
+  Trash2,
 } from "lucide-react";
 import {
   type Application,
   type ApplicationsParams,
   type ApplicationsPage,
+  deleteApplication,
   getApplications,
+  updateApplicationStatus,
 } from "../lib/api";
 import { BLUE, BLUE_LIGHT, TIME_SLOTS, WEEK_DAYS } from "../lib/constants";
 import {
@@ -46,7 +50,6 @@ export function ApplicationsTab({
 }) {
   const [view, setView] = useState<AppView>("list");
 
-  // List state
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [search, setSearch] = useState("");
@@ -57,13 +60,11 @@ export function ApplicationsTab({
   const [data, setData] = useState<ApplicationsPage | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Calendar state — uses a separate full-list fetch
   const [calMonth, setCalMonth] = useState(() => new Date());
   const [calDate, setCalDate] = useState<string | null>(null);
   const [allApps, setAllApps] = useState<Application[]>([]);
   const [calLoading, setCalLoading] = useState(false);
 
-  // Debounce search input
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -74,7 +75,6 @@ export function ApplicationsTab({
     }, SEARCH_DEBOUNCE_MS);
   };
 
-  // Fetch paginated list
   useEffect(() => {
     if (view !== "list") return;
     let active = true;
@@ -96,7 +96,6 @@ export function ApplicationsTab({
     return () => { active = false; };
   }, [token, onAuthError, view, page, pageSize, debouncedSearch, sortField, sortDir]);
 
-  // Fetch all apps for calendar (no pagination)
   useEffect(() => {
     if (view !== "calendar") return;
     let active = true;
@@ -120,6 +119,37 @@ export function ApplicationsTab({
       setSortDir("asc");
     }
     setPage(1);
+  };
+
+  const handleDelete = async (id: number, fio: string) => {
+    try {
+      await deleteApplication(token, id);
+      toast.success("Запись удалена");
+      setData((prev) =>
+        prev
+          ? { ...prev, items: prev.items.filter((a) => a.id !== id), total: prev.total - 1 }
+          : prev
+      );
+      setAllApps((prev) => prev.filter((a) => a.id !== id));
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleStatus = async (id: number, status: "confirmed" | "rejected" | "pending") => {
+    try {
+      await updateApplicationStatus(token, id, status);
+      const label = status === "confirmed" ? "подтверждена" : "отклонена";
+      toast.success(`Запись ${label}`);
+      const patch = (a: Application): Application =>
+        a.id === id ? { ...a, status } : a;
+      setData((prev) =>
+        prev ? { ...prev, items: prev.items.map(patch) } : prev
+      );
+      setAllApps((prev) => prev.map(patch));
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   const byDate = useMemo(() => {
@@ -167,7 +197,6 @@ export function ApplicationsTab({
 
   return (
     <div>
-      {/* Top bar */}
       <div className="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-gray-500">
           Всего записей: {view === "list" ? total : allApps.length}
@@ -200,7 +229,6 @@ export function ApplicationsTab({
 
       {view === "list" ? (
         <div>
-          {/* Search */}
           <div className="relative mb-4 max-w-md">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
@@ -213,7 +241,6 @@ export function ApplicationsTab({
             />
           </div>
 
-          {/* Table */}
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full min-w-[700px] border-collapse text-left text-sm">
               <thead style={{ background: BLUE, color: "#fff" }}>
@@ -223,13 +250,14 @@ export function ApplicationsTab({
                   <SortTh label="Дата"    field="registration_date" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                   <SortTh label="Время"   field="registration_time" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
                   <SortTh label="Создано" field="created_at"        sortField={sortField} sortDir={sortDir} onSort={handleSort} />
+                  <th className="px-4 py-3 font-semibold text-xs uppercase text-center">Действия</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {loading ? (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Загружаем заявки...</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Загружаем заявки...</td></tr>
                 ) : items.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-8 text-center text-gray-400">Заявок не найдено</td></tr>
+                  <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">Заявок не найдено</td></tr>
                 ) : (
                   items.map((item) => (
                     <tr
@@ -255,6 +283,30 @@ export function ApplicationsTab({
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
                         {new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.created_at))}
                       </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col items-center gap-1.5">
+                          <StatusBadge status={item.status} />
+                          <div className="flex gap-1">
+                            <ActionBtn
+                              title="Принять"
+                              color="#16a34a"
+                              hoverColor="#15803d"
+                              active={item.status !== "confirmed"}
+                              onClick={() => handleStatus(item.id, item.status === "confirmed" ? "pending" : "confirmed")}
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </ActionBtn>
+                            <ActionBtn
+                              title="Отклонить и удалить"
+                              color="#ef4444"
+                              hoverColor="#dc2626"
+                              onClick={() => handleDelete(item.id, item.fio)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </ActionBtn>
+                          </div>
+                        </div>
+                      </td>
                     </tr>
                   ))
                 )}
@@ -262,7 +314,6 @@ export function ApplicationsTab({
             </table>
           </div>
 
-          {/* Pagination */}
           {!loading && total > 0 && (
             <Pagination
               page={page}
@@ -368,7 +419,55 @@ function buildPageRange(current: number, total: number): (number | "…")[] {
   return result;
 }
 
-// ─── SortTh ──────────────────────────────────────────────────────────────────
+// ─── StatusBadge ─────────────────────────────────────────────────────────────
+
+const STATUS_MAP: Record<string, { label: string; bg: string; color: string }> = {
+  pending:   { label: "Ожидает",      bg: "#fef9c3", color: "#854d0e" },
+  confirmed: { label: "Подтверждена", bg: "#dcfce7", color: "#166534" },
+  rejected:  { label: "Отклонена",    bg: "#fee2e2", color: "#991b1b" },
+};
+
+function StatusBadge({ status }: { status: string }) {
+  const s = STATUS_MAP[status] ?? STATUS_MAP.pending;
+  return (
+    <span
+      className="inline-block rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap"
+      style={{ background: s.bg, color: s.color }}
+    >
+      {s.label}
+    </span>
+  );
+}
+
+// ─── ActionBtn ───────────────────────────────────────────────────────────────
+
+function ActionBtn({
+  children, title, color, hoverColor, active, onClick,
+}: {
+  children: React.ReactNode;
+  title: string;
+  color: string;
+  hoverColor: string;
+  active?: boolean;
+  onClick: () => void;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      title={title}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="inline-flex h-7 w-7 items-center justify-center rounded-md text-white transition"
+      style={{
+        background: hovered ? hoverColor : color,
+        opacity: active === false ? 0.45 : 1,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 function SortTh({ label, field, sortField, sortDir, onSort }: {
   label: string; field: SortField; sortField: SortField; sortDir: SortDir;
@@ -496,7 +595,10 @@ function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, 
                     <div className="divide-y divide-gray-100">
                       {byTime[time].map((app) => (
                         <div key={app.id} className="px-4 py-3">
-                          <div className="font-medium text-sm">{app.fio}</div>
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="font-medium text-sm">{app.fio}</div>
+                            <StatusBadge status={app.status} />
+                          </div>
                           <div className="flex gap-4 mt-1 text-xs text-gray-500">
                             <span>{app.phone}</span><span>{app.email}</span>
                           </div>

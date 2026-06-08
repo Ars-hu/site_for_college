@@ -6,6 +6,7 @@ export type Application = {
   registration_date: string;
   registration_time: string;
   created_at: string;
+  status: "pending" | "confirmed" | "rejected";
 };
 
 export type RegistrationPayload = {
@@ -167,4 +168,26 @@ export function updateSlot(
     headers: { Authorization: token },
     body: JSON.stringify({ date, time, ...params }),
   });
+}
+
+export function deleteApplication(token: string, id: number) {
+  return request<{ deleted: boolean; id: number }>(
+    `/api/admin/applications/${id}`,
+    { method: "DELETE", headers: { Authorization: token } }
+  );
+}
+
+export function updateApplicationStatus(
+  token: string,
+  id: number,
+  status: "pending" | "confirmed" | "rejected"
+) {
+  return request<{ id: number; status: string }>(
+    `/api/admin/applications/${id}/status`,
+    {
+      method: "PATCH",
+      headers: { Authorization: token },
+      body: JSON.stringify({ status }),
+    }
+  );
 }
