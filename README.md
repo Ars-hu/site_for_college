@@ -32,7 +32,7 @@
 ```bash
 docker compose up --build
 ```
-
+docker compose down
 После запуска:
 
 - Сайт: `http://localhost`

@@ -19,6 +19,7 @@ export function RegistrationForm({
   onSuccess: () => void;
 }) {
   const [form, setForm] = useState<FormData>({ fio: "", phone: "", email: "" });
+  const [consent, setConsent] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const submit = async (e: FormEvent<HTMLFormElement>) => {
@@ -35,6 +36,11 @@ export function RegistrationForm({
     }
     if (!EMAIL_RE.test(form.email)) {
       toast.error("Введите корректный email: example@domain.ru");
+      return;
+    }
+
+    if (!consent) {
+      toast.error("Необходимо дать согласие на обработку персональных данных");
       return;
     }
 
@@ -148,6 +154,22 @@ export function RegistrationForm({
             </div>
           </label>
         </div>
+
+        <label
+          className="flex items-start gap-3 cursor-pointer rounded-lg border border-gray-200 p-4 hover:border-blue-300 hover:bg-blue-50 transition"
+          style={consent ? { borderColor: BLUE, background: BLUE_LIGHT } : {}}
+        >
+          <input
+            type="checkbox"
+            checked={consent}
+            onChange={(e) => setConsent(e.target.checked)}
+            className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-blue-600"
+          />
+          <span className="text-sm text-gray-600 leading-snug">
+            Я даю согласие на обработку персональных данных в соответствии с
+            Федеральным законом от 27.07.2006 №152-ФЗ «О персональных данных».
+          </span>
+        </label>
 
         <button
           className="mt-2 rounded-lg px-5 py-3 font-semibold text-white transition disabled:opacity-60"
