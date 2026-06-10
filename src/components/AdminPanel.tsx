@@ -6,11 +6,11 @@ import { AdminDashboard } from "./AdminDashboard";
 
 export function AdminPanel({ onClose }: { onClose: () => void }) {
   const [token, setToken] = useState(
-    () => localStorage.getItem("admin_token") ?? ""
+    () => sessionStorage.getItem("admin_token") ?? ""
   );
 
   const logout = () => {
-    localStorage.removeItem("admin_token");
+    sessionStorage.removeItem("admin_token");
     setToken("");
   };
 
@@ -32,7 +32,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
       ) : (
         <AdminLogin
           onLogin={(t) => {
-            localStorage.setItem("admin_token", t);
+            sessionStorage.setItem("admin_token", t);
             setToken(t);
             toast.success("Вход выполнен");
           }}
