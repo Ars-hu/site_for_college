@@ -42,6 +42,11 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   return data as T;
 }
 
+// Формирует заголовок Authorization в стандартном формате Bearer
+function authHeader(token: string): HeadersInit {
+  return { Authorization: `Bearer ${token}` };
+}
+
 export function getAllowedMonths() {
   return request<AllowedMonth[]>("/api/allowed-months");
 }
@@ -77,26 +82,26 @@ export function getApplications(token: string, params: ApplicationsParams = {}) 
   if (params.order)     qs.set("order",     params.order);
   const query = qs.toString() ? `?${qs}` : "";
   return request<ApplicationsPage>(`/api/admin/applications${query}`, {
-    headers: { Authorization: token },
+    headers: authHeader(token),
   });
 }
 
 export function getBlockedDates(token: string) {
   return request<{ blocked_dates: string[]; opened_weekends: string[] }>("/api/admin/blocked-dates", {
-    headers: { Authorization: token },
+    headers: authHeader(token),
   });
 }
 
 export function getAdminAllowedMonths(token: string) {
   return request<AllowedMonth[]>("/api/admin/allowed-months", {
-    headers: { Authorization: token },
+    headers: authHeader(token),
   });
 }
 
 export function addAllowedMonth(token: string, year: number, month: number) {
   return request<AllowedMonth>("/api/admin/add-month", {
     method: "POST",
-    headers: { Authorization: token },
+    headers: authHeader(token),
     body: JSON.stringify({ year, month }),
   });
 }
@@ -104,7 +109,7 @@ export function addAllowedMonth(token: string, year: number, month: number) {
 export function removeAllowedMonth(token: string, year: number, month: number) {
   return request<{ removed: boolean }>("/api/admin/remove-month", {
     method: "POST",
-    headers: { Authorization: token },
+    headers: authHeader(token),
     body: JSON.stringify({ year, month }),
   });
 }
@@ -112,7 +117,7 @@ export function removeAllowedMonth(token: string, year: number, month: number) {
 export function toggleWeekend(token: string, date: string) {
   return request<{ opened: boolean; date: string }>("/api/admin/toggle-weekend", {
     method: "POST",
-    headers: { Authorization: token },
+    headers: authHeader(token),
     body: JSON.stringify({ date }),
   });
 }
@@ -120,14 +125,14 @@ export function toggleWeekend(token: string, date: string) {
 export function toggleDate(token: string, date: string) {
   return request<{ blocked: boolean; date: string }>("/api/admin/toggle-date", {
     method: "POST",
-    headers: { Authorization: token },
+    headers: authHeader(token),
     body: JSON.stringify({ date }),
   });
 }
 
 export function getSlotConfigs(token: string, date: string) {
   return request<SlotConfigsResponse>(`/api/admin/slot-configs/${date}`, {
-    headers: { Authorization: token },
+    headers: authHeader(token),
   });
 }
 
@@ -139,7 +144,7 @@ export function updateSlot(
 ) {
   return request<SlotInfo & { date: string; time: string }>("/api/admin/update-slot", {
     method: "POST",
-    headers: { Authorization: token },
+    headers: authHeader(token),
     body: JSON.stringify({ date, time, ...params }),
   });
 }
@@ -153,21 +158,21 @@ export function getArchive(token: string, params: ApplicationsParams = {}) {
   if (params.order)     qs.set("order",     params.order);
   const query = qs.toString() ? `?${qs}` : "";
   return request<ArchivePage>(`/api/admin/archive${query}`, {
-    headers: { Authorization: token },
+    headers: authHeader(token),
   });
 }
 
 export function runArchive(token: string) {
   return request<{ archived: number }>("/api/admin/archive/run", {
     method: "POST",
-    headers: { Authorization: token },
+    headers: authHeader(token),
   });
 }
 
 export function deleteApplication(token: string, id: number) {
   return request<{ deleted: boolean; id: number }>(
     `/api/admin/applications/${id}`,
-    { method: "DELETE", headers: { Authorization: token } }
+    { method: "DELETE", headers: authHeader(token) }
   );
 }
 
@@ -180,7 +185,7 @@ export function updateApplicationStatus(
     `/api/admin/applications/${id}/status`,
     {
       method: "PATCH",
-      headers: { Authorization: token },
+      headers: authHeader(token),
       body: JSON.stringify({ status }),
     }
   );

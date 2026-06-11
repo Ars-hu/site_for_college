@@ -11,22 +11,52 @@ admin_bp = Blueprint("admin", __name__)
 
 
 def verify_token(req):
-    token = req.headers.get("Authorization")
+    """Проверяет JWT-токен из заголовка Authorization.
+
+    Принимает как 'Bearer <token>', так и просто '<token>' для совместимости.
+    Возвращает payload словарь при успехе, None при ошибке.
+    """
+    auth_header = req.headers.get("Authorization", "")
+    if not auth_header:
+        return None
+
+    # Поддерживаем оба формата: "Bearer <token>" и просто "<token>"
+    token = auth_header.removeprefix("Bearer ").strip()
     if not token:
         return None
+
     try:
-        jwt.decode(token, current_app.config["SECRET_KEY"], algorithms=["HS256"])
-        return token
-    except Exception:
+        payload = jwt.decode(
+            token,
+            current_app.config["SECRET_KEY"],
+            algorithms=["HS256"],
+        )
+        # Явно проверяем поле user — нет поля = невалидный токен
+        if not payload.get("user"):
+            return None
+        return payload
+    except jwt.ExpiredSignatureError:
         return None
+    except jwt.InvalidTokenError:
+        return None
+
+
+def _auth_error():
+    return jsonify({"message": "Нет доступа"}), 401
 
 
 @admin_bp.route("/login", methods=["POST"])
 @limiter.limit("5 per minute")
 def login():
     data = request.json or {}
-    admin = Admin.query.filter_by(username=data.get("username")).first()
-    if admin and check_password_hash(admin.password_hash, data.get("password", "")):
+    username = data.get("username", "").strip()
+    password = data.get("password", "")
+
+    if not username or not password:
+        return jsonify({"message": "Неверный логин или пароль"}), 401
+
+    admin = Admin.query.filter_by(username=username).first()
+    if admin and check_password_hash(admin.password_hash, password):
         archive_expired()
         token = jwt.encode(
             {
@@ -43,9 +73,11 @@ def login():
 @admin_bp.route("/applications", methods=["GET"])
 def get_applications():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
 
     search   = (request.args.get("search", "") or "").strip()
+    # Защита от слишком длинных поисковых запросов
+    search   = search[:200]
     sort     = request.args.get("sort", "registration_date")
     order    = request.args.get("order", "asc")
     try:
@@ -82,7 +114,6 @@ def get_applications():
     else:
         q = q.order_by(col.asc())
 
-    # Secondary sort for stable ordering
     if sort == "registration_date":
         q = q.order_by(
             Application.registration_time.asc()
@@ -117,14 +148,14 @@ def get_applications():
         "total":      total,
         "page":       page,
         "page_size":  page_size,
-        "total_pages": max(1, -(-total // page_size)),  # ceil division
+        "total_pages": max(1, -(-total // page_size)),
     })
 
 
 @admin_bp.route("/applications/<int:app_id>", methods=["DELETE"])
 def delete_application(app_id):
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     app = Application.query.get(app_id)
     if not app:
         return jsonify({"error": "Запись не найдена"}), 404
@@ -136,7 +167,7 @@ def delete_application(app_id):
 @admin_bp.route("/applications/<int:app_id>/status", methods=["PATCH"])
 def update_application_status(app_id):
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     data = request.json or {}
     new_status = data.get("status")
     if new_status not in ("pending", "confirmed", "rejected"):
@@ -152,9 +183,9 @@ def update_application_status(app_id):
 @admin_bp.route("/archive", methods=["GET"])
 def get_archive():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
 
-    search = (request.args.get("search", "") or "").strip()
+    search = (request.args.get("search", "") or "").strip()[:200]
     sort = request.args.get("sort", "registration_date")
     order = request.args.get("order", "desc")
     try:
@@ -215,7 +246,7 @@ def get_archive():
 @admin_bp.route("/archive/run", methods=["POST"])
 def run_archive():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     count = archive_expired()
     return jsonify({"archived": count})
 
@@ -223,7 +254,7 @@ def run_archive():
 @admin_bp.route("/blocked-dates", methods=["GET"])
 def get_blocked_dates():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     blocked = BlockedDate.query.all()
     opened = OpenedDate.query.all()
     return jsonify({
@@ -235,13 +266,12 @@ def get_blocked_dates():
 @admin_bp.route("/toggle-weekend", methods=["POST"])
 def toggle_weekend():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     data = request.json or {}
     date = data.get("date")
     if not date:
         return jsonify({"error": "Дата не указана"}), 400
 
-    from datetime import date as date_type
     try:
         parsed = date_type.fromisoformat(date)
     except ValueError:
@@ -264,11 +294,16 @@ def toggle_weekend():
 @admin_bp.route("/toggle-date", methods=["POST"])
 def toggle_date():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     data = request.json or {}
     date = data.get("date")
     if not date:
         return jsonify({"error": "Дата не указана"}), 400
+
+    try:
+        date_type.fromisoformat(date)
+    except ValueError:
+        return jsonify({"error": "Некорректный формат даты"}), 400
 
     existing = BlockedDate.query.filter_by(date=date).first()
     if existing:
@@ -285,7 +320,12 @@ def toggle_date():
 @admin_bp.route("/slot-configs/<date>", methods=["GET"])
 def get_slot_configs(date):
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
+
+    try:
+        date_type.fromisoformat(date)
+    except ValueError:
+        return jsonify({"error": "Некорректный формат даты"}), 400
 
     apps = Application.query.filter_by(registration_date=date).all()
     occupied: dict[str, int] = {}
@@ -309,7 +349,7 @@ def get_slot_configs(date):
 @admin_bp.route("/update-slot", methods=["POST"])
 def update_slot():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     data = request.json or {}
     date = data.get("date")
     time = data.get("time")
@@ -318,6 +358,14 @@ def update_slot():
 
     if not date or not time:
         return jsonify({"error": "Не указана дата или время"}), 400
+
+    try:
+        date_type.fromisoformat(date)
+    except ValueError:
+        return jsonify({"error": "Некорректный формат даты"}), 400
+
+    if time not in TIME_SLOTS:
+        return jsonify({"error": "Недопустимое время"}), 400
 
     cfg = SlotConfig.query.filter_by(date=date, time=time).first()
     if not cfg:
@@ -358,7 +406,7 @@ def update_slot():
 @admin_bp.route("/allowed-months", methods=["GET"])
 def get_allowed_months():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     months = AllowedMonth.query.order_by(AllowedMonth.year, AllowedMonth.month).all()
     return jsonify([{"year": m.year, "month": m.month} for m in months])
 
@@ -366,7 +414,7 @@ def get_allowed_months():
 @admin_bp.route("/add-month", methods=["POST"])
 def add_month():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     data = request.json or {}
     year = data.get("year")
     month = data.get("month")
@@ -388,7 +436,7 @@ def add_month():
 @admin_bp.route("/remove-month", methods=["POST"])
 def remove_month():
     if not verify_token(request):
-        return jsonify({"message": "Нет доступа"}), 401
+        return _auth_error()
     data = request.json or {}
     try:
         year, month = int(data.get("year")), int(data.get("month"))

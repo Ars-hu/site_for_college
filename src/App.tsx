@@ -129,14 +129,37 @@ export default function App() {
       {/* Content */}
       <main className="mx-auto max-w-6xl gap-6 px-4 py-6 grid lg:grid-cols-[1fr_300px]">
         <section className="min-w-0">
-          <ErrorBoundary>
           {isAdmin ? (
-            <AdminPanel
-              onClose={() => {
-                resetRegistration();
-              }}
-            />
+            <ErrorBoundary
+              name="AdminPanel"
+              fallback={
+                <div className="flex items-center justify-center min-h-[40vh]">
+                  <div className="text-center p-8">
+                    <h2 className="text-xl font-semibold text-gray-700 mb-2">
+                      Не удалось загрузить панель администратора
+                    </h2>
+                    <p className="text-gray-500 mb-5">
+                      Пожалуйста, обновите страницу
+                    </p>
+                    <button
+                      onClick={() => window.location.reload()}
+                      className="px-5 py-2 rounded-lg text-white text-sm font-medium"
+                      style={{ background: "#1d4ed8" }}
+                    >
+                      Обновить страницу
+                    </button>
+                  </div>
+                </div>
+              }
+            >
+              <AdminPanel
+                onClose={() => {
+                  resetRegistration();
+                }}
+              />
+            </ErrorBoundary>
           ) : (
+            <ErrorBoundary name="RegistrationFlow">
             <RegistrationFlow
               step={step}
               month={month}
@@ -165,8 +188,8 @@ export default function App() {
                 resetRegistration();
               }}
             />
+            </ErrorBoundary>
           )}
-          </ErrorBoundary>
         </section>
 
         <aside className="space-y-4">

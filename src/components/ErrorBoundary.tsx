@@ -3,25 +3,39 @@ import { BLUE } from "../lib/constants";
 
 interface Props {
   children: ReactNode;
+  // Опциональный fallback — если не передан, используется дефолтный
+  fallback?: ReactNode;
+  // Метка для логов — чтобы знать какой именно компонент упал
+  name?: string;
 }
 
 interface State {
   hasError: boolean;
+  error: Error | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
-  state: State = { hasError: false };
+  state: State = { hasError: false, error: null };
 
-  static getDerivedStateFromError(): State {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error): State {
+    return { hasError: true, error };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    console.error("Uncaught render error:", error, info.componentStack);
+    const label = this.props.name ?? "Unknown";
+    console.error(`[ErrorBoundary:${label}] Uncaught render error:`, error, info.componentStack);
   }
+
+  handleRetry = () => {
+    this.setState({ hasError: false, error: null });
+  };
 
   render() {
     if (this.state.hasError) {
+      if (this.props.fallback) {
+        return this.props.fallback;
+      }
+
       return (
         <div className="flex items-center justify-center min-h-[40vh]">
           <div className="text-center p-8">
@@ -30,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
             </h2>
             <p className="text-gray-500 mb-5">Пожалуйста, обновите страницу</p>
             <button
-              onClick={() => this.setState({ hasError: false })}
+              onClick={this.handleRetry}
               className="px-5 py-2 rounded-lg text-white text-sm font-medium"
               style={{ background: BLUE }}
             >
