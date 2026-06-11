@@ -11,7 +11,7 @@ class Application(db.Model):
     email = db.Column(db.String(100), nullable=False)
     registration_date = db.Column(db.String(20), nullable=False, index=True)
     registration_time = db.Column(db.String(10), nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    created_at = db.Column(db.DateTime, nullable=False, default=lambda: datetime.now(timezone.utc))
     # pending | confirmed | rejected
     status = db.Column(db.String(20), nullable=False, default="pending")
 
