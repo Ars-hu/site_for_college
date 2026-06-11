@@ -232,10 +232,12 @@ export default function App() {
                 <button
                   key={grade}
                   onClick={() => setDocsModal(grade)}
-                  className="w-full flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 hover:border-blue-300 hover:bg-blue-50 transition"
+                  className="w-full flex items-center rounded-lg border border-gray-200 px-4 py-3 text-sm font-medium text-gray-700 hover:border-blue-300 hover:bg-blue-50 transition"
                 >
-                  <span>После {grade === "9" ? "девятого" : "одиннадцатого"} класса</span>
-                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                  <span className="text-left">
+                    После {grade === "9" ? "девятого" : "одиннадцатого"} класса
+                  </span>
+                  <ChevronRight className="ml-auto h-4 w-4 text-gray-400" />
                 </button>
               ))}
             </div>
@@ -252,7 +254,6 @@ export default function App() {
                 "Документ об образовании государственного образца (оригинал + копия)",
                 "Копия паспорта — 2 шт.",
                 "Четыре фотографии 3×4 см (без головного убора)",
-                "Медицинская справка",
                 "Копия страхового медицинского полиса (2 стороны)",
                 "Копия сертификата о прививках",
                 "Копия СНИЛС",
