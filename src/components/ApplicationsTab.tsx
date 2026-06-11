@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import * as XLSX from "xlsx";
 import { toast } from "react-hot-toast";
 import {
   ArrowDown,
@@ -33,7 +32,7 @@ import {
   startOfCalendar,
   toApiDate,
 } from "../lib/utils";
-import { MonthNav } from "./ui/MonthNav";
+import { MonthNav } from "./MonthNav";
 
 type AppView = "list" | "calendar";
 type SortField = ApplicationsParams["sort"] & string;
@@ -71,7 +70,9 @@ export function ApplicationsTab({
   const [calLoading, setCalLoading] = useState(false);
   const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
 
-  // Debounce search input
+  const stableOnAuthError = useRef(onAuthError);
+  useEffect(() => { stableOnAuthError.current = onAuthError; }, [onAuthError]);
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -97,12 +98,12 @@ export function ApplicationsTab({
       .then((d) => { if (active) setData(d); })
       .catch((e) => {
         if (!active) return;
-        if (e.message === "Нет доступа" || e.message?.includes("401")) onAuthError();
+        if (e.message === "Нет доступа" || e.message?.includes("401")) stableOnAuthError.current();
         else toast.error(e.message);
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [token, onAuthError, view, page, pageSize, debouncedSearch, sortField, sortDir]);
+  }, [token, view, page, pageSize, debouncedSearch, sortField, sortDir]);
 
   // Fetch all apps for calendar (no pagination)
   useEffect(() => {
@@ -121,12 +122,12 @@ export function ApplicationsTab({
       })
       .catch((e) => {
         if (!active) return;
-        if (e.message === "Нет доступа" || e.message?.includes("401")) onAuthError();
+        if (e.message === "Нет доступа" || e.message?.includes("401")) stableOnAuthError.current();
         else toast.error(e.message);
       })
       .finally(() => { if (active) setCalLoading(false); });
     return () => { active = false; };
-  }, [token, onAuthError, view]);
+  }, [token, view]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
@@ -186,7 +187,7 @@ export function ApplicationsTab({
     return map;
   }, [allApps]);
 
-  const exportXlsx = async () => {
+  const exportCsv = async () => {
     try {
       const all = await getApplications(token, {
         page: 1,
@@ -200,10 +201,14 @@ export function ApplicationsTab({
         item.id, item.fio, item.phone, item.email,
         item.registration_date, item.registration_time, item.created_at,
       ]);
-      const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "Заявки");
-      XLSX.writeFile(wb, "applications.xlsx");
+      const csv = [header, ...rows]
+        .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
+        .join("\n");
+      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = "applications.csv"; a.click();
+      URL.revokeObjectURL(url);
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -242,9 +247,9 @@ export function ApplicationsTab({
           </div>
           <button
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-            onClick={exportXlsx}
+            onClick={exportCsv}
           >
-            <Download className="h-4 w-4" /> Excel
+            <Download className="h-4 w-4" /> CSV
           </button>
         </div>
       </div>
@@ -292,6 +297,7 @@ export function ApplicationsTab({
                     >
                       <td className="px-4 py-3">
                         <div className="font-semibold">{item.fio}</div>
+                        <div className="text-xs text-gray-400">ID {item.id}</div>
                       </td>
                       <td className="px-4 py-3">
                         <div>{item.phone}</div>
