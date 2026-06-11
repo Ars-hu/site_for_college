@@ -127,7 +127,7 @@ export function ArchiveTab({
       const rows = all.items.map((item) => [
         item.original_id, item.fio, item.phone, item.email,
         item.registration_date, item.registration_time,
-        new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.archived_at)),
+        new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.archived_at ?? item.created_at)),
         statusLabels[item.status] ?? item.status,
       ]);
       const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
@@ -209,7 +209,9 @@ export function ArchiveTab({
                     </span>
                   </td>
                   <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                    {new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.archived_at))}
+                    {item.archived_at
+                      ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.archived_at))
+                      : "—"}
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={item.status} />

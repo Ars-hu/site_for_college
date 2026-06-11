@@ -310,7 +310,9 @@ export function ApplicationsTab({
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
-                        {new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.created_at))}
+                        {item.created_at
+                          ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.created_at))
+                          : "—"}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col items-center gap-1.5">
