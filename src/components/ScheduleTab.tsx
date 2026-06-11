@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { CalendarDays, Minus, Plus } from "lucide-react";
 import { getAdminAllowedMonths, getBlockedDates, getSlotConfigs, toggleDate, toggleWeekend, updateSlot } from "../lib/api";
@@ -26,6 +26,9 @@ export function ScheduleTab({
 
   const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
 
+  const stableOnAuthError = useRef(onAuthError);
+  useEffect(() => { stableOnAuthError.current = onAuthError; }, [onAuthError]);
+
   useEffect(() => {
     getAdminAllowedMonths(token)
       .then(setAllowedMonths)
@@ -40,10 +43,10 @@ export function ScheduleTab({
       })
       .catch((e) => {
         if (e.message === "Нет доступа" || e.message?.includes("401"))
-          onAuthError();
+          stableOnAuthError.current();
         else toast.error(e.message);
       });
-  }, [token, onAuthError]);
+  }, [token]);
 
   const loadSlotConfigs = (date: string) => {
     setLoadingSlots(true);

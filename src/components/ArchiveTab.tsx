@@ -61,6 +61,9 @@ export function ArchiveTab({
   const [loading, setLoading] = useState(true);
   const [reloadKey, setReloadKey] = useState(0);
 
+  const stableOnAuthError = useRef(onAuthError);
+  useEffect(() => { stableOnAuthError.current = onAuthError; }, [onAuthError]);
+
   // Автоматически переносим просроченные записи при открытии вкладки
   useEffect(() => {
     runArchive(token)
@@ -91,12 +94,12 @@ export function ArchiveTab({
       .then((d) => { if (active) setData(d); })
       .catch((e) => {
         if (!active) return;
-        if (e.message === "Нет доступа" || e.message?.includes("401")) onAuthError();
+        if (e.message === "Нет доступа" || e.message?.includes("401")) stableOnAuthError.current();
         else toast.error(e.message);
       })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [token, onAuthError, page, pageSize, debouncedSearch, sortField, sortDir, reloadKey]);
+  }, [token, page, pageSize, debouncedSearch, sortField, sortDir, reloadKey]);
 
   const handleSort = (field: SortField) => {
     if (field === sortField) {
