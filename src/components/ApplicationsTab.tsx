@@ -266,7 +266,7 @@ export function ApplicationsTab({
 
           {/* Table */}
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full min-w-[700px] border-collapse text-left text-sm">
+            <table className="w-full min-w-[600px] border-collapse text-left text-sm">
               <thead style={{ background: BLUE, color: "#fff" }}>
                 <tr>
                   <SortTh label="ФИО"     field="fio"               sortField={sortField} sortDir={sortDir} onSort={handleSort} />
@@ -290,26 +290,25 @@ export function ApplicationsTab({
                       onMouseEnter={(e) => { e.currentTarget.style.background = BLUE_LIGHT; }}
                       onMouseLeave={(e) => { e.currentTarget.style.background = ""; }}
                     >
-                      <td className="px-4 py-3">
-                        <div className="font-semibold">{item.fio}</div>
-                        <div className="text-xs text-gray-400">ID {item.id}</div>
+                      <td className="px-3 py-3">
+                        <div className="font-semibold text-sm">{item.fio}</div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div>{item.phone}</div>
-                        <div className="text-xs text-gray-500">{item.email}</div>
+                      <td className="px-3 py-3">
+                        <div className="text-sm">{item.phone}</div>
+                        <div className="text-xs text-gray-400 truncate max-w-[160px]">{item.email}</div>
                       </td>
-                      <td className="px-4 py-3 whitespace-nowrap">{formatDisplayDate(item.registration_date)}</td>
+                      <td className="px-3 py-3 whitespace-nowrap text-sm">{formatDisplayDate(item.registration_date)}</td>
                       <td className="px-4 py-3">
                         <span className="rounded px-2 py-1 font-semibold text-white text-xs" style={{ background: BLUE }}>
                           {item.registration_time}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                      <td className="px-3 py-3 text-gray-500 whitespace-nowrap text-sm">
                         {item.created_at
                           ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.created_at))
                           : "—"}
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-2 py-3">
                         <div className="flex flex-col items-center gap-1.5">
                           <StatusBadge status={item.status} />
                           <div className="flex gap-1">

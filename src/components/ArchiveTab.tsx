@@ -171,15 +171,15 @@ export function ArchiveTab({
       </div>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full min-w-[700px] border-collapse text-left text-sm">
+        <table className="w-full min-w-[600px] border-collapse text-left text-sm">
           <thead style={{ background: "#6b7280", color: "#fff" }}>
             <tr>
               <SortTh label="ФИО"            field="fio"               sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <th className="px-4 py-3 font-semibold text-xs uppercase">Контакты</th>
+              <th className="px-3 py-3 font-semibold text-xs uppercase">Контакты</th>
               <SortTh label="Дата"           field="registration_date" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
               <SortTh label="Время"          field="registration_time" sortField={sortField} sortDir={sortDir} onSort={handleSort} />
               <SortTh label="В архив"        field="archived_at"       sortField={sortField} sortDir={sortDir} onSort={handleSort} />
-              <th className="px-4 py-3 font-semibold text-xs uppercase">Статус</th>
+              <th className="px-3 py-3 font-semibold text-xs uppercase">Статус</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -195,25 +195,25 @@ export function ArchiveTab({
                   onMouseEnter={(e) => { e.currentTarget.style.background = BLUE_LIGHT; }}
                   onMouseLeave={(e) => { e.currentTarget.style.background = ""; }}
                 >
-                  <td className="px-4 py-3">
-                    <div className="font-semibold">{item.fio}</div>
+                  <td className="px-3 py-3">
+                    <div className="font-semibold text-sm">{item.fio}</div>
                   </td>
-                  <td className="px-4 py-3">
-                    <div>{item.phone}</div>
-                    <div className="text-xs text-gray-500">{item.email}</div>
+                  <td className="px-3 py-3">
+                    <div className="text-sm">{item.phone}</div>
+                    <div className="text-xs text-gray-400 truncate max-w-[160px]">{item.email}</div>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap">{formatDisplayDate(item.registration_date)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm">{formatDisplayDate(item.registration_date)}</td>
+                  <td className="px-3 py-3">
                     <span className="rounded px-2 py-1 font-semibold text-white text-xs" style={{ background: "#6b7280" }}>
                       {item.registration_time}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500 whitespace-nowrap">
+                  <td className="px-3 py-3 text-gray-500 whitespace-nowrap text-sm">
                     {item.archived_at
                       ? new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(item.archived_at))
                       : "—"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-3 py-3">
                     <StatusBadge status={item.status} />
                   </td>
                 </tr>
