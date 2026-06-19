@@ -7,10 +7,12 @@ import { formatDisplayDate, toApiDate } from "../../lib/utils";
 
 export function TimePicker({
   selectedDate,
+  serverNow,
   onBack,
   onTimeSelect,
 }: {
   selectedDate: Date;
+  serverNow: Date | null;
   onBack: () => void;
   onTimeSelect: (t: string) => void;
 }) {
@@ -36,11 +38,12 @@ export function TimePicker({
     };
   }, [selectedDate]);
 
-  const now = new Date();
+  const now = serverNow ?? new Date();
+  const cutoff = new Date(now.getTime() + 24 * 60 * 60 * 1000);
   const availableSlots = TIME_SLOTS.filter((time) => {
     const slotDate = new Date(selectedDate);
     slotDate.setHours(parseInt(time.split(":")[0]), parseInt(time.split(":")[1]), 0, 0);
-    return slotDate > now;
+    return slotDate > cutoff;
   });
 
   return (

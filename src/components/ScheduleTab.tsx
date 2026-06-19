@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { CalendarDays, Minus, Plus } from "lucide-react";
-import { getAdminAllowedMonths, getBlockedDates, getSlotConfigs, toggleDate, toggleWeekend, updateSlot } from "../lib/api";
+import { getAdminAllowedMonths, getBlockedDates, getClock, getSlotConfigs, toggleDate, toggleWeekend, updateSlot } from "../lib/api";
 import type { AllowedMonth } from "../lib/api";
 import { BLUE, BLUE_LIGHT, TIME_SLOTS, WEEK_DAYS } from "../lib/constants";
 import { formatDisplayDate, isSameDate, normalizeToday, startOfCalendar, toApiDate } from "../lib/utils";
@@ -23,6 +23,8 @@ export function ScheduleTab({
   >({});
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [togglingDate, setTogglingDate] = useState(false);
+  const [serverToday, setServerToday] = useState<Date | null>(null);
+  const [serverNow, setServerNow] = useState<Date | null>(null);
 
   const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
 
@@ -33,6 +35,21 @@ export function ScheduleTab({
     getAdminAllowedMonths(token)
       .then(setAllowedMonths)
       .catch(() => {});
+  }, [token]);
+
+  useEffect(() => {
+    getClock(token)
+      .then((info) => {
+        // effective_now is "YYYY-MM-DDTHH:MM:SS"
+        const dateStr = info.effective_now.split("T")[0];
+        const [y, m, d] = dateStr.split("-").map(Number);
+        setServerToday(new Date(y, m - 1, d, 0, 0, 0, 0));
+        // Store full server datetime for 24h cutoff
+        const [timePart] = info.effective_now.split("T").slice(1);
+        const [hh, mm, ss] = (timePart ?? "00:00:00").split(":").map(Number);
+        setServerNow(new Date(y, m - 1, d, hh, mm, ss ?? 0));
+      })
+      .catch(() => {}); // fallback to browser time silently
   }, [token]);
 
   useEffect(() => {
@@ -128,10 +145,13 @@ export function ScheduleTab({
     }
   };
 
-  const today = normalizeToday();
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
+  // Use server date for everything — синий кружок, isPast, и блокировка кнопок
+  const today = serverToday ?? normalizeToday();
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1;
+  const serverTodayStr = toApiDate(today);
+  // Cutoff: 24h from now (browser time, since server_date only gives date not time)
+  const cutoff24h = new Date((serverNow ?? new Date()).getTime() + 24 * 60 * 60 * 1000);
 
   // Set of "YYYY-M" for fast lookup
   const allowedMonthsSet = useMemo(
@@ -203,6 +223,14 @@ export function ScheduleTab({
     year: "numeric",
   }).format(month);
   const isSelectedDateBlocked = selectedDate ? blockedSet.has(selectedDate) : false;
+  // Prevent admin from changing availability for past dates or dates within 24h window
+  const isSelectedDatePastOrSoon = (() => {
+    if (!selectedDate) return false;
+    if (serverTodayStr && selectedDate < serverTodayStr) return true;
+    const lastSlotTime = TIME_SLOTS[TIME_SLOTS.length - 1];
+    const lastSlotDt = new Date(`${selectedDate}T${lastSlotTime}:00`);
+    return lastSlotDt <= cutoff24h;
+  })();
 
   const isSelectedDateWeekend = selectedDate
     ? (() => { const d = new Date(`${selectedDate}T00:00:00`); return d.getDay() === 0 || d.getDay() === 6; })()
@@ -238,7 +266,13 @@ export function ScheduleTab({
             const isToday = isSameDate(day, today);
             const isWeekend = day.getDay() === 0 || day.getDay() === 6;
             const isOpenedWeekend = isWeekend && openedWeekendsSet.has(apiDate);
-            const disabled = outOfMonth || isPast || !isMonthOk;
+            // Day is inaccessible if all its slots are within 24h window
+            const lastSlotTime = TIME_SLOTS[TIME_SLOTS.length - 1];
+            const lastSlotDt = new Date(day);
+            lastSlotDt.setHours(parseInt(lastSlotTime.split(":")[0]), parseInt(lastSlotTime.split(":")[1]), 0, 0);
+            const within24h = lastSlotDt <= cutoff24h;
+            // Admin can click past days to view them, just can't change availability
+            const disabled = outOfMonth || !isMonthOk;
 
             let bg = "#fff";
             if (outOfMonth) bg = "transparent";
@@ -257,8 +291,10 @@ export function ScheduleTab({
                   background: bg,
                   color: outOfMonth
                     ? "transparent"
-                    : isPast || !isMonthOk
+                    : !isMonthOk
                     ? "#aaa"
+                  : isPast || within24h
+                    ? "#999"
                     : blocked
                     ? "#888"
                     : isWeekend && !isOpenedWeekend
@@ -297,7 +333,7 @@ export function ScheduleTab({
               </h3>
               {isSelectedDateWeekend ? (
                 <button
-                  disabled={togglingDate}
+                  disabled={togglingDate || isSelectedDatePastOrSoon}
                   onClick={handleToggleWeekend}
                   className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-60 transition"
                   style={{ background: isSelectedWeekendOpened ? "#757575" : "#388e3c" }}
@@ -310,7 +346,7 @@ export function ScheduleTab({
                 </button>
               ) : (
                 <button
-                  disabled={togglingDate}
+                  disabled={togglingDate || isSelectedDatePastOrSoon}
                   onClick={handleToggleDate}
                   className="rounded-lg px-3 py-2 text-xs font-semibold text-white disabled:opacity-60 transition"
                   style={{ background: isSelectedDateBlocked ? "#388e3c" : "#757575" }}
@@ -324,6 +360,11 @@ export function ScheduleTab({
               )}
             </div>
 
+            {isSelectedDatePastOrSoon && (
+              <div className="mb-4 rounded-lg p-3 text-sm font-medium border border-amber-200 text-amber-700 bg-amber-50">
+                Изменение недоступно — дата прошла или запись закрывается автоматически (менее 24ч).
+              </div>
+            )}
             {isSelectedDateWeekend && !isSelectedWeekendOpened && (
               <div className="mb-4 rounded-lg p-3 text-sm font-medium border border-amber-200 text-amber-700 bg-amber-50">
                 Выходной день — запись закрыта. Нажмите «Открыть выходной», чтобы разрешить запись.
@@ -373,7 +414,7 @@ export function ScheduleTab({
                         <div className="flex items-center gap-1">
                           <button
                             onClick={() => handleCapacityChange(time, -1)}
-                            disabled={blocked || cap <= 1}
+                            disabled={blocked || cap <= 1 || isSelectedDatePastOrSoon}
                             className="grid h-6 w-6 place-items-center rounded border border-gray-200 hover:bg-gray-100 disabled:opacity-40"
                           >
                             <Minus className="h-3 w-3" />
@@ -383,7 +424,7 @@ export function ScheduleTab({
                           </span>
                           <button
                             onClick={() => handleCapacityChange(time, 1)}
-                            disabled={blocked}
+                            disabled={blocked || isSelectedDatePastOrSoon}
                             className="grid h-6 w-6 place-items-center rounded border border-gray-200 hover:bg-gray-100 disabled:opacity-40"
                           >
                             <Plus className="h-3 w-3" />
@@ -391,6 +432,7 @@ export function ScheduleTab({
                         </div>
                         <button
                           onClick={() => handleToggleSlot(time)}
+                          disabled={isSelectedDatePastOrSoon}
                           className="rounded px-2 py-1 text-xs font-semibold text-white transition"
                           style={{
                             background: blocked ? "#388e3c" : "#757575",

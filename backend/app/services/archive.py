@@ -1,12 +1,10 @@
-from datetime import datetime
-from zoneinfo import ZoneInfo
-
 from app.models import db, Application, ArchivedApplication
+from app.clock import get_now
 
 
 def archive_expired() -> int:
     """Move past applications to ArchivedApplication. Returns count moved."""
-    now = datetime.now(ZoneInfo("Europe/Moscow"))
+    now = get_now()
     today_str = now.strftime("%Y-%m-%d")
     current_time = now.strftime("%H:%M")
 

@@ -62,3 +62,20 @@ class SlotConfig(db.Model):
     max_capacity = db.Column(db.Integer, default=3)
     is_blocked = db.Column(db.Boolean, default=False)
     __table_args__ = (db.UniqueConstraint("date", "time", name="uq_slot_date_time"),)
+
+class SystemClock(db.Model):
+    """Manual time override set by admin. Only one row (id=1) is used."""
+    id = db.Column(db.Integer, primary_key=True)
+    # If set, this datetime is used as "now" instead of server clock.
+    # Format: ISO datetime string, e.g. "2025-09-01T09:00:00"
+    manual_datetime = db.Column(db.String(30), nullable=True)
+    timezone_name = db.Column(db.String(50), nullable=False, default="Europe/Moscow")
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class DailyLimit(db.Model):
+    """Maximum number of registrations allowed per calendar day."""
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(20), unique=True, nullable=False)
+    max_registrations = db.Column(db.Integer, nullable=False, default=0)
+    # 0 means unlimited; any positive value = limit

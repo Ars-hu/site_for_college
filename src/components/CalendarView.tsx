@@ -14,6 +14,8 @@ export function CalendarView({
   fullDates,
   openedWeekends,
   allowedMonths,
+  serverDate,
+  serverNow,
   onMonthChange,
   onDateSelect,
 }: {
@@ -22,10 +24,19 @@ export function CalendarView({
   fullDates: string[];
   openedWeekends: string[];
   allowedMonths: AllowedMonth[];
+  serverDate: string | null;
+  serverNow: Date | null;
   onMonthChange: (d: Date) => void;
   onDateSelect: (d: Date) => void;
 }) {
-  const today = normalizeToday();
+  // Use server date when admin has set manual clock, fallback to browser date
+  const today = (() => {
+    if (serverDate) {
+      const [y, m, d] = serverDate.split("-").map(Number);
+      return new Date(y, m - 1, d, 0, 0, 0, 0);
+    }
+    return normalizeToday();
+  })();
   const blockedSet = useMemo(() => new Set(blockedDates), [blockedDates]);
   const fullSet = useMemo(() => new Set(fullDates), [fullDates]);
   const openedWeekendsSet = useMemo(() => new Set(openedWeekends), [openedWeekends]);
@@ -109,12 +120,17 @@ export function CalendarView({
           const isWeekend = day.getDay() === 0 || day.getDay() === 6;
           const isOpenedWeekend = isWeekend && openedWeekendsSet.has(apiDate);
           const isToday = isSameDate(day, today);
-          const isAllSlotsPast = isToday && (() => {
-            const now = new Date();
+          // Block day if ALL slots fall within the next 24h window
+          const isAllSlotsPast = (() => {
+            const cutoff = new Date((serverNow ?? new Date()).getTime() + 24 * 60 * 60 * 1000);
             const lastSlot = TIME_SLOTS[TIME_SLOTS.length - 1];
             const lastSlotDate = new Date(day);
-            lastSlotDate.setHours(parseInt(lastSlot.split(":")[0]), parseInt(lastSlot.split(":")[1]), 0, 0);
-            return lastSlotDate <= now;
+            lastSlotDate.setHours(
+              parseInt(lastSlot.split(":")[0]),
+              parseInt(lastSlot.split(":")[1]),
+              0, 0
+            );
+            return lastSlotDate <= cutoff;
           })();
           const disabled =
             outOfMonth || isPast || isBlocked || isFull || notAllowed ||

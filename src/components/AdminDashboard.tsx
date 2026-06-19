@@ -1,12 +1,13 @@
 import { useState, type ReactNode } from "react";
-import { Archive, CalendarDays, FileText, LogOut, Settings } from "lucide-react";
+import { Archive, CalendarDays, FileText, LogOut, Settings, SlidersHorizontal } from "lucide-react";
 import { BLUE, BLUE_DARK } from "../lib/constants";
 import { ApplicationsTab } from "./ApplicationsTab";
 import { ArchiveTab } from "./ArchiveTab";
 import { ScheduleTab } from "./ScheduleTab";
 import { MonthsTab } from "./MonthsTab";
+import { SettingsTab } from "./SettingsTab";
 
-type AdminTab = "applications" | "schedule" | "months" | "archive";
+type AdminTab = "applications" | "schedule" | "months" | "archive" | "settings";
 
 export function AdminDashboard({
   token,
@@ -24,6 +25,7 @@ export function AdminDashboard({
     { id: "schedule",     label: "Расписание",  icon: <Settings className="h-4 w-4" /> },
     { id: "months",       label: "Месяцы",      icon: <CalendarDays className="h-4 w-4" /> },
     { id: "archive",      label: "Архив",       icon: <Archive className="h-4 w-4" /> },
+    { id: "settings",     label: "Настройки",   icon: <SlidersHorizontal className="h-4 w-4" /> },
   ];
 
   return (
@@ -71,6 +73,9 @@ export function AdminDashboard({
         )}
         {tab === "archive" && (
           <ArchiveTab token={token} onAuthError={onAuthError} />
+        )}
+        {tab === "settings" && (
+          <SettingsTab token={token} onAuthError={onAuthError} />
         )}
       </div>
     </div>

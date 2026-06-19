@@ -25,6 +25,8 @@ export default function App() {
   const [blockedDates, setBlockedDates] = useState<string[]>([]);
   const [fullDates, setFullDates] = useState<string[]>([]);
   const [openedWeekends, setOpenedWeekends] = useState<string[]>([]);
+  const [serverDate, setServerDate] = useState<string | null>(null);
+  const [serverNow, setServerNow] = useState<Date | null>(null);
   const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
   const monthInitRef = useRef(false);
 
@@ -32,8 +34,16 @@ export default function App() {
     getDatesStatus()
       .then((d) => {
         setBlockedDates(d.blocked_dates);
-        setFullDates(d.full_dates);
+        const within24h: string[] = d.blocked_within_24h ?? [];
+        setFullDates([...new Set([...d.full_dates, ...within24h])]);
         setOpenedWeekends(d.opened_weekends);
+        if (d.server_date) setServerDate(d.server_date);
+        if (d.server_now) {
+          const [datePart, timePart] = d.server_now.split("T");
+          const [y, m, day] = datePart.split("-").map(Number);
+          const [h, min, s] = timePart.split(":").map(Number);
+          setServerNow(new Date(y, m - 1, day, h, min, s));
+        }
       })
       .catch(() => {});
   };
@@ -169,6 +179,8 @@ export default function App() {
               fullDates={fullDates}
               openedWeekends={openedWeekends}
               allowedMonths={allowedMonths}
+              serverDate={serverDate}
+              serverNow={serverNow}
               onMonthChange={setMonth}
               onDateSelect={pickDate}
               onTimeSelect={(t) => {

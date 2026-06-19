@@ -20,6 +20,8 @@ import {
   type ApplicationsPage,
   type AllowedMonth,
   deleteApplication,
+  exportApplicationsExcel,
+  getClock,
   getAdminAllowedMonths,
   getApplications,
   updateApplicationStatus,
@@ -70,8 +72,19 @@ export function ApplicationsTab({
   const [calLoading, setCalLoading] = useState(false);
   const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
 
+  const [serverToday, setServerToday] = useState<Date | null>(null);
+  const today = serverToday ?? normalizeToday();
   const stableOnAuthError = useRef(onAuthError);
   useEffect(() => { stableOnAuthError.current = onAuthError; }, [onAuthError]);
+
+  useEffect(() => {
+    getClock(token)
+      .then((info) => {
+        const [y, m, d] = info.effective_now.split("T")[0].split("-").map(Number);
+        setServerToday(new Date(y, m - 1, d, 0, 0, 0, 0));
+      })
+      .catch(() => {});
+  }, [token]);
 
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleSearch = (value: string) => {
@@ -187,28 +200,10 @@ export function ApplicationsTab({
     return map;
   }, [allApps]);
 
-  const exportCsv = async () => {
+  const exportExcel = async (filterDate?: string) => {
     try {
-      const all = await getApplications(token, {
-        page: 1,
-        page_size: 10000,
-        search: debouncedSearch || undefined,
-        sort: sortField as ApplicationsParams["sort"],
-        order: sortDir,
-      });
-      const header = ["ID", "ФИО", "Телефон", "Email", "Дата", "Время", "Создано"];
-      const rows = all.items.map((item) => [
-        item.id, item.fio, item.phone, item.email,
-        item.registration_date, item.registration_time, item.created_at,
-      ]);
-      const csv = [header, ...rows]
-        .map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(";"))
-        .join("\n");
-      const blob = new Blob([`\uFEFF${csv}`], { type: "text/csv;charset=utf-8" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "applications.csv"; a.click();
-      URL.revokeObjectURL(url);
+      await exportApplicationsExcel(token, filterDate);
+      toast.success(filterDate ? `Выгружен день ${filterDate}` : "Excel файл скачан");
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -247,9 +242,9 @@ export function ApplicationsTab({
           </div>
           <button
             className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium hover:bg-gray-50"
-            onClick={exportCsv}
+            onClick={() => exportExcel()}
           >
-            <Download className="h-4 w-4" /> CSV
+            <Download className="h-4 w-4" /> Excel
           </button>
         </div>
       </div>
@@ -368,6 +363,8 @@ export function ApplicationsTab({
           selectedDate={calDate}
           onDateSelect={setCalDate}
           allowedMonths={allowedMonths}
+          onExportDay={exportExcel}
+          today={today}
         />
       )}
     </div>
@@ -520,15 +517,15 @@ function SortTh({ label, field, sortField, sortDir, onSort }: {
 
 // ─── Calendar view ────────────────────────────────────────────────────────────
 
-function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, onDateSelect, allowedMonths }: {
+function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, onDateSelect, allowedMonths, onExportDay, today }: {
   byDate: Record<string, Application[]>; loading: boolean; month: Date;
   onMonthChange: (d: Date) => void; selectedDate: string | null; onDateSelect: (d: string | null) => void;
   allowedMonths: AllowedMonth[];
+  onExportDay: (date: string) => void;
+  today: Date;
 }) {
-  const today = normalizeToday();
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
+  const currentYear = today.getFullYear();
+  const currentMonth = today.getMonth() + 1;
 
   const allowedSet = useMemo(
     () => new Set(allowedMonths.map((m) => `${m.year}-${m.month}`)),
@@ -666,7 +663,16 @@ function CalendarAppView({ byDate, loading, month, onMonthChange, selectedDate, 
         {selectedDate ? (
           <div>
             <div className="mb-4">
-              <h3 className="font-semibold text-lg text-gray-800">{formatDisplayDate(selectedDate)}</h3>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <h3 className="font-semibold text-lg text-gray-800">{formatDisplayDate(selectedDate)}</h3>
+                <button
+                  onClick={() => onExportDay(selectedDate)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-medium hover:bg-gray-50"
+                  title="Выгрузить записи этого дня в Excel"
+                >
+                  <Download className="h-3.5 w-3.5" /> Excel
+                </button>
+              </div>
               <p className="text-sm text-gray-500">Всего записей: {dateApps.length}</p>
             </div>
             {dateApps.length === 0 ? (

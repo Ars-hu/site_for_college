@@ -457,3 +457,178 @@ def remove_month():
     db.session.delete(row)
     db.session.commit()
     return jsonify({"removed": True})
+
+
+# ─── Excel export ─────────────────────────────────────────────────────────────
+
+@admin_bp.route("/applications/export/excel", methods=["GET"])
+def export_applications_excel():
+    """Export all (or filtered by date) applications as .xlsx"""
+    if not verify_token(request):
+        return _auth_error()
+
+    from io import BytesIO
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+
+    filter_date = request.args.get("date", "").strip()  # optional YYYY-MM-DD
+
+    q = Application.query
+    if filter_date:
+        q = q.filter_by(registration_date=filter_date)
+    q = q.order_by(Application.registration_date.asc(), Application.registration_time.asc())
+    apps = q.all()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Записи"
+
+    HEADER_FILL = PatternFill("solid", fgColor="1D4ED8")
+    HEADER_FONT = Font(bold=True, color="FFFFFF", size=11)
+
+    headers = ["ID", "ФИО", "Телефон", "Email", "Дата записи", "Время", "Статус", "Дата создания"]
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col_idx, value=h)
+        cell.font = HEADER_FONT
+        cell.fill = HEADER_FILL
+        cell.alignment = Alignment(horizontal="center")
+
+    STATUS_RU = {"pending": "Ожидает", "confirmed": "Подтверждена", "rejected": "Отклонена"}
+
+    for row_idx, a in enumerate(apps, 2):
+        ws.cell(row=row_idx, column=1, value=a.id)
+        ws.cell(row=row_idx, column=2, value=a.fio)
+        ws.cell(row=row_idx, column=3, value=a.phone)
+        ws.cell(row=row_idx, column=4, value=a.email)
+        ws.cell(row=row_idx, column=5, value=a.registration_date)
+        ws.cell(row=row_idx, column=6, value=a.registration_time)
+        ws.cell(row=row_idx, column=7, value=STATUS_RU.get(a.status, a.status))
+        ws.cell(row=row_idx, column=8, value=(
+            a.created_at.strftime("%d.%m.%Y %H:%M") if a.created_at else ""
+        ))
+
+    # Auto-width
+    col_widths = [6, 35, 18, 30, 14, 10, 16, 18]
+    for i, width in enumerate(col_widths, 1):
+        ws.column_dimensions[openpyxl.utils.get_column_letter(i)].width = width
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    filename = f"записи_{filter_date}.xlsx" if filter_date else "все_записи.xlsx"
+    from flask import send_file
+    return send_file(
+        buf,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=filename,
+    )
+
+
+# ─── System clock ─────────────────────────────────────────────────────────────
+
+@admin_bp.route("/clock", methods=["GET"])
+def get_clock():
+    if not verify_token(request):
+        return _auth_error()
+    from app.models import SystemClock
+    from app.clock import get_now
+    clock = SystemClock.query.get(1)
+    now = get_now()
+    return jsonify({
+        "manual_datetime": clock.manual_datetime if clock else None,
+        "timezone_name": clock.timezone_name if clock else "Europe/Moscow",
+        "effective_now": now.strftime("%Y-%m-%dT%H:%M:%S"),
+    })
+
+
+@admin_bp.route("/clock", methods=["POST"])
+def set_clock():
+    if not verify_token(request):
+        return _auth_error()
+    from app.models import SystemClock
+    data = request.json or {}
+    manual_dt = data.get("manual_datetime")  # ISO string or null to reset
+    tz_name = data.get("timezone_name", "Europe/Moscow")
+
+    clock = SystemClock.query.get(1)
+    if not clock:
+        clock = SystemClock(id=1)
+        from app.models import db as _db
+        _db.session.add(clock)
+
+    if manual_dt:
+        # Validate
+        try:
+            datetime.fromisoformat(manual_dt)
+        except ValueError:
+            return jsonify({"error": "Некорректный формат даты/времени"}), 400
+        clock.manual_datetime = manual_dt
+    else:
+        clock.manual_datetime = None  # reset to server clock
+
+    clock.timezone_name = tz_name
+    clock.updated_at = datetime.now(timezone.utc)
+    from app.models import db as _db
+    _db.session.commit()
+
+    from app.clock import get_now
+    now = get_now()
+    return jsonify({
+        "manual_datetime": clock.manual_datetime,
+        "timezone_name": clock.timezone_name,
+        "effective_now": now.strftime("%Y-%m-%dT%H:%M:%S"),
+    })
+
+
+# ─── Daily limit ──────────────────────────────────────────────────────────────
+
+@admin_bp.route("/daily-limit/<date>", methods=["GET"])
+def get_daily_limit(date):
+    if not verify_token(request):
+        return _auth_error()
+    from app.models import DailyLimit
+    try:
+        date_type.fromisoformat(date)
+    except ValueError:
+        return jsonify({"error": "Некорректный формат даты"}), 400
+
+    row = DailyLimit.query.filter_by(date=date).first()
+    count = Application.query.filter_by(registration_date=date).count()
+    return jsonify({
+        "date": date,
+        "max_registrations": row.max_registrations if row else 0,
+        "current_count": count,
+    })
+
+
+@admin_bp.route("/daily-limit", methods=["POST"])
+def set_daily_limit():
+    if not verify_token(request):
+        return _auth_error()
+    from app.models import DailyLimit
+    data = request.json or {}
+    date = data.get("date", "").strip()
+    max_reg = data.get("max_registrations")
+
+    if not date:
+        return jsonify({"error": "Не указана дата"}), 400
+    try:
+        date_type.fromisoformat(date)
+    except ValueError:
+        return jsonify({"error": "Некорректный формат даты"}), 400
+    try:
+        max_reg = int(max_reg)
+        if max_reg < 0:
+            raise ValueError
+    except (TypeError, ValueError):
+        return jsonify({"error": "Некорректное значение лимита"}), 400
+
+    row = DailyLimit.query.filter_by(date=date).first()
+    if not row:
+        row = DailyLimit(date=date)
+        db.session.add(row)
+    row.max_registrations = max_reg
+    db.session.commit()
+    return jsonify({"date": date, "max_registrations": max_reg})

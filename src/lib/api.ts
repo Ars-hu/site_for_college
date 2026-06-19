@@ -56,7 +56,7 @@ export function getSlotsStatus(date: string) {
 }
 
 export function getDatesStatus() {
-  return request<{ blocked_dates: string[]; full_dates: string[]; opened_weekends: string[] }>("/api/dates-status");
+  return request<{ blocked_dates: string[]; full_dates: string[]; opened_weekends: string[]; blocked_within_24h?: string[]; server_date?: string; server_now?: string }>("/api/dates-status");
 }
 
 export function registerApplication(payload: RegistrationPayload) {
@@ -189,4 +189,67 @@ export function updateApplicationStatus(
       body: JSON.stringify({ status }),
     }
   );
+}
+
+// ─── Excel export ─────────────────────────────────────────────────────────────
+
+export async function exportApplicationsExcel(token: string, date?: string): Promise<void> {
+  const url = date
+    ? `/api/admin/applications/export/excel?date=${date}`
+    : `/api/admin/applications/export/excel`;
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error("Ошибка экспорта");
+  const blob = await response.blob();
+  const filename = date ? `записи_${date}.xlsx` : "все_записи.xlsx";
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ─── System clock ─────────────────────────────────────────────────────────────
+
+export interface ClockInfo {
+  manual_datetime: string | null;
+  timezone_name: string;
+  effective_now: string;
+}
+
+export function getClock(token: string) {
+  return request<ClockInfo>("/api/admin/clock", {
+    headers: authHeader(token),
+  });
+}
+
+export function setClock(token: string, manual_datetime: string | null, timezone_name?: string) {
+  return request<ClockInfo>("/api/admin/clock", {
+    method: "POST",
+    headers: authHeader(token),
+    body: JSON.stringify({ manual_datetime, timezone_name: timezone_name ?? "Europe/Moscow" }),
+  });
+}
+
+// ─── Daily limit ─────────────────────────────────────────────────────────────
+
+export interface DailyLimitInfo {
+  date: string;
+  max_registrations: number;
+  current_count: number;
+}
+
+export function getDailyLimit(token: string, date: string) {
+  return request<DailyLimitInfo>(`/api/admin/daily-limit/${date}`, {
+    headers: authHeader(token),
+  });
+}
+
+export function setDailyLimit(token: string, date: string, max_registrations: number) {
+  return request<{ date: string; max_registrations: number }>("/api/admin/daily-limit", {
+    method: "POST",
+    headers: authHeader(token),
+    body: JSON.stringify({ date, max_registrations }),
+  });
 }

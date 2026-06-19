@@ -1,10 +1,9 @@
 from flask import Blueprint, request, jsonify
 from sqlalchemy import func
-from app.models import db, Application, BlockedDate, SlotConfig, OpenedDate, AllowedMonth
+from app.models import db, Application, BlockedDate, SlotConfig, OpenedDate, AllowedMonth, DailyLimit
 from app.config import TIME_SLOTS, DEFAULT_MAX_CAPACITY
 from app.extensions import limiter
-from datetime import datetime
-from zoneinfo import ZoneInfo
+from app.clock import get_now
 
 public_bp = Blueprint("public", __name__)
 
@@ -36,7 +35,17 @@ def get_slots_status(date):
             "is_blocked": cfg.is_blocked if cfg else False,
         }
 
-    return jsonify({"date_blocked": date_blocked, "slots": slots})
+    # Daily limit info
+    daily = DailyLimit.query.filter_by(date=date).first()
+    daily_limit = daily.max_registrations if daily else 0
+    daily_count = Application.query.filter_by(registration_date=date).count()
+
+    return jsonify({
+        "date_blocked": date_blocked,
+        "slots": slots,
+        "daily_limit": daily_limit,
+        "daily_count": daily_count,
+    })
 
 
 @public_bp.route("/dates-status", methods=["GET"])
@@ -82,10 +91,40 @@ def get_dates_status():
         if all_full:
             full_dates.append(date)
 
+    # Dates blocked by daily limit
+    daily_limits = DailyLimit.query.filter(DailyLimit.max_registrations > 0).all()
+    daily_full_dates = []
+    for dl in daily_limits:
+        count = Application.query.filter_by(registration_date=dl.date).count()
+        if count >= dl.max_registrations:
+            daily_full_dates.append(dl.date)
+
+    # Merge both full lists
+    all_full_dates = list(set(full_dates + daily_full_dates))
+
+    from app.clock import get_now
+    from datetime import timedelta
+    now = get_now()
+    cutoff = now + timedelta(hours=24)
+    # Dates within next 24 hours are fully blocked for new registrations
+    blocked_within_24h = []
+    # Check today and tomorrow
+    for delta in range(2):
+        from datetime import datetime as _dt
+        check_date = (now + timedelta(days=delta)).strftime("%Y-%m-%d")
+        # If ALL slots on that day are within 24h window, mark as blocked
+        last_slot_str = f"{check_date} {TIME_SLOTS[-1]}"
+        last_slot_dt = _dt.strptime(last_slot_str, "%Y-%m-%d %H:%M").replace(tzinfo=now.tzinfo)
+        if last_slot_dt <= cutoff:
+            blocked_within_24h.append(check_date)
+
     return jsonify({
         "blocked_dates": blocked_dates,
-        "full_dates": full_dates,
+        "full_dates": all_full_dates,
         "opened_weekends": opened_weekends,
+        "blocked_within_24h": blocked_within_24h,
+        "server_date": now.strftime("%Y-%m-%d"),
+        "server_now": now.strftime("%Y-%m-%dT%H:%M:%S"),
     })
 
 
@@ -106,20 +145,26 @@ def register():
         return jsonify({"error": "Недопустимое время записи"}), 400
 
     try:
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
         try:
             date_obj = datetime.strptime(date, "%Y-%m-%d")
         except ValueError:
             return jsonify({"error": "Некорректный формат даты"}), 400
 
-        # Проверка: нельзя записаться на прошедшую дату/время
-        now = datetime.now(ZoneInfo("Europe/Moscow"))
+        # Use centralized clock (respects manual override)
+        now = get_now()
         slot_dt_str = f"{date} {time}"
         try:
-            slot_dt = datetime.strptime(slot_dt_str, "%Y-%m-%d %H:%M").replace(tzinfo=ZoneInfo("Europe/Moscow"))
+            slot_dt = datetime.strptime(slot_dt_str, "%Y-%m-%d %H:%M").replace(
+                tzinfo=ZoneInfo("Europe/Moscow")
+            )
         except ValueError:
             return jsonify({"error": "Некорректный формат даты или времени"}), 400
-        if slot_dt <= now:
-            return jsonify({"error": "Нельзя записаться на прошедшее время"}), 400
+        from datetime import timedelta
+        if slot_dt <= now + timedelta(hours=24):
+            return jsonify({"error": "Запись доступна минимум за 24 часа до приёма"}), 400
 
         if not AllowedMonth.query.filter_by(year=date_obj.year, month=date_obj.month).first():
             return jsonify({"error": "Запись на этот месяц недоступна"}), 400
@@ -144,6 +189,13 @@ def register():
 
         if existing_user:
             return jsonify({"error": "Вы уже записаны на эту дату"}), 400
+
+        # Check daily limit
+        daily_limit_row = DailyLimit.query.filter_by(date=date).first()
+        if daily_limit_row and daily_limit_row.max_registrations > 0:
+            daily_count = Application.query.filter_by(registration_date=date).count()
+            if daily_count >= daily_limit_row.max_registrations:
+                return jsonify({"error": "На этот день достигнут лимит записей"}), 400
 
         slots_count = Application.query.filter_by(
             registration_date=date,
