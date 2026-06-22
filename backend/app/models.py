@@ -79,3 +79,26 @@ class DailyLimit(db.Model):
     date = db.Column(db.String(20), unique=True, nullable=False)
     max_registrations = db.Column(db.Integer, nullable=False, default=0)
     # 0 means unlimited; any positive value = limit
+
+
+class SiteSettings(db.Model):
+    """Global site settings stored as key-value pairs."""
+    id = db.Column(db.Integer, primary_key=True)
+    key = db.Column(db.String(50), unique=True, nullable=False)
+    value = db.Column(db.String(100), nullable=False)
+
+    @staticmethod
+    def get(key: str, default: str = "") -> str:
+        row = SiteSettings.query.filter_by(key=key).first()
+        return row.value if row else default
+
+    @staticmethod
+    def set(key: str, value: str):
+        row = SiteSettings.query.filter_by(key=key).first()
+        if not row:
+            row = SiteSettings(key=key)
+            from app.models import db as _db
+            _db.session.add(row)
+        row.value = value
+        from app.models import db as _db
+        _db.session.commit()

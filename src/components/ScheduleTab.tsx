@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "react-hot-toast";
 import { CalendarDays, Minus, Plus } from "lucide-react";
-import { getAdminAllowedMonths, getBlockedDates, getClock, getSlotConfigs, toggleDate, toggleWeekend, updateSlot } from "../lib/api";
+import { getAdminAllowedMonths, getBlockedDates, getClock, getSiteSettings, getSlotConfigs, toggleDate, toggleWeekend, updateSlot } from "../lib/api";
 import type { AllowedMonth } from "../lib/api";
 import { BLUE, BLUE_LIGHT, TIME_SLOTS, WEEK_DAYS } from "../lib/constants";
 import { formatDisplayDate, isSameDate, normalizeToday, startOfCalendar, toApiDate } from "../lib/utils";
@@ -151,7 +151,12 @@ export function ScheduleTab({
   const currentMonth = today.getMonth() + 1;
   const serverTodayStr = toApiDate(today);
   // Cutoff: 24h from now (browser time, since server_date only gives date not time)
-  const cutoff24h = new Date((serverNow ?? new Date()).getTime() + 24 * 60 * 60 * 1000);
+  // Load advance_hours from settings
+  const [advanceHours, setAdvanceHours] = useState<number>(24);
+  useEffect(() => {
+    getSiteSettings(token).then((s) => setAdvanceHours(s.advance_hours)).catch(() => {});
+  }, [token]);
+  const cutoff24h = new Date((serverNow ?? new Date()).getTime() + advanceHours * 60 * 60 * 1000);
 
   // Set of "YYYY-M" for fast lookup
   const allowedMonthsSet = useMemo(

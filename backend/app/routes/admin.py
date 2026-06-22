@@ -632,3 +632,36 @@ def set_daily_limit():
     row.max_registrations = max_reg
     db.session.commit()
     return jsonify({"date": date, "max_registrations": max_reg})
+
+
+# ─── Site settings ────────────────────────────────────────────────────────────
+
+@admin_bp.route("/settings", methods=["GET"])
+def get_settings():
+    if not verify_token(request):
+        return _auth_error()
+    from app.models import SiteSettings
+    return jsonify({
+        "advance_hours": int(SiteSettings.get("advance_hours", "24")),
+    })
+
+
+@admin_bp.route("/settings", methods=["POST"])
+def update_settings():
+    if not verify_token(request):
+        return _auth_error()
+    from app.models import SiteSettings
+    data = request.json or {}
+
+    if "advance_hours" in data:
+        try:
+            val = int(data["advance_hours"])
+            if val < 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            return jsonify({"error": "Некорректное значение часов"}), 400
+        SiteSettings.set("advance_hours", str(val))
+
+    return jsonify({
+        "advance_hours": int(SiteSettings.get("advance_hours", "24")),
+    })

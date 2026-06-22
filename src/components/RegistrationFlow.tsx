@@ -19,6 +19,7 @@ export function RegistrationFlow({
   allowedMonths,
   serverDate,
   serverNow,
+  advanceHours,
   onMonthChange,
   onDateSelect,
   onTimeSelect,
@@ -35,6 +36,7 @@ export function RegistrationFlow({
   allowedMonths: AllowedMonth[];
   serverDate: string | null;
   serverNow: Date | null;
+  advanceHours: number;
   onMonthChange: (d: Date) => void;
   onDateSelect: (d: Date) => void;
   onTimeSelect: (t: string) => void;
@@ -78,6 +80,7 @@ export function RegistrationFlow({
             allowedMonths={allowedMonths}
             serverDate={serverDate}
             serverNow={serverNow}
+            advanceHours={advanceHours}
             onMonthChange={onMonthChange}
             onDateSelect={onDateSelect}
           />
@@ -86,6 +89,7 @@ export function RegistrationFlow({
           <TimePicker
             selectedDate={selectedDate}
             serverNow={serverNow}
+            advanceHours={advanceHours}
             onBack={onBack}
             onTimeSelect={onTimeSelect}
           />

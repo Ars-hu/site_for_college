@@ -27,6 +27,7 @@ export default function App() {
   const [openedWeekends, setOpenedWeekends] = useState<string[]>([]);
   const [serverDate, setServerDate] = useState<string | null>(null);
   const [serverNow, setServerNow] = useState<Date | null>(null);
+  const [advanceHours, setAdvanceHours] = useState<number>(24);
   const [allowedMonths, setAllowedMonths] = useState<AllowedMonth[]>([]);
   const monthInitRef = useRef(false);
 
@@ -44,6 +45,7 @@ export default function App() {
           const [h, min, s] = timePart.split(":").map(Number);
           setServerNow(new Date(y, m - 1, day, h, min, s));
         }
+        if (d.advance_hours !== undefined) setAdvanceHours(d.advance_hours);
       })
       .catch(() => {});
   };
@@ -181,6 +183,7 @@ export default function App() {
               allowedMonths={allowedMonths}
               serverDate={serverDate}
               serverNow={serverNow}
+              advanceHours={advanceHours}
               onMonthChange={setMonth}
               onDateSelect={pickDate}
               onTimeSelect={(t) => {

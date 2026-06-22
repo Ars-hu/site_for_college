@@ -16,6 +16,7 @@ export function CalendarView({
   allowedMonths,
   serverDate,
   serverNow,
+  advanceHours,
   onMonthChange,
   onDateSelect,
 }: {
@@ -26,6 +27,7 @@ export function CalendarView({
   allowedMonths: AllowedMonth[];
   serverDate: string | null;
   serverNow: Date | null;
+  advanceHours: number;
   onMonthChange: (d: Date) => void;
   onDateSelect: (d: Date) => void;
 }) {
@@ -122,7 +124,7 @@ export function CalendarView({
           const isToday = isSameDate(day, today);
           // Block day if ALL slots fall within the next 24h window
           const isAllSlotsPast = (() => {
-            const cutoff = new Date((serverNow ?? new Date()).getTime() + 24 * 60 * 60 * 1000);
+            const cutoff = new Date((serverNow ?? new Date()).getTime() + advanceHours * 60 * 60 * 1000);
             const lastSlot = TIME_SLOTS[TIME_SLOTS.length - 1];
             const lastSlotDate = new Date(day);
             lastSlotDate.setHours(

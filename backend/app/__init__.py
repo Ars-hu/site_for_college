@@ -3,7 +3,7 @@ import warnings
 from flask import Flask
 from flask_cors import CORS
 from app.config import Config, _DEFAULT_SECRET
-from app.models import db, Admin, AllowedMonth, SystemClock, DailyLimit
+from app.models import db, Admin, AllowedMonth, SystemClock, DailyLimit, SiteSettings
 from app.extensions import limiter
 from datetime import datetime, timezone
 from werkzeug.security import generate_password_hash

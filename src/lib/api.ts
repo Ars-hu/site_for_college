@@ -56,7 +56,7 @@ export function getSlotsStatus(date: string) {
 }
 
 export function getDatesStatus() {
-  return request<{ blocked_dates: string[]; full_dates: string[]; opened_weekends: string[]; blocked_within_24h?: string[]; server_date?: string; server_now?: string }>("/api/dates-status");
+  return request<{ blocked_dates: string[]; full_dates: string[]; opened_weekends: string[]; blocked_within_24h?: string[]; server_date?: string; server_now?: string; advance_hours?: number }>("/api/dates-status");
 }
 
 export function registerApplication(payload: RegistrationPayload) {
@@ -251,5 +251,25 @@ export function setDailyLimit(token: string, date: string, max_registrations: nu
     method: "POST",
     headers: authHeader(token),
     body: JSON.stringify({ date, max_registrations }),
+  });
+}
+
+// ─── Site settings ────────────────────────────────────────────────────────────
+
+export interface SiteSettingsData {
+  advance_hours: number;
+}
+
+export function getSiteSettings(token: string) {
+  return request<SiteSettingsData>("/api/admin/settings", {
+    headers: authHeader(token),
+  });
+}
+
+export function updateSiteSettings(token: string, data: Partial<SiteSettingsData>) {
+  return request<SiteSettingsData>("/api/admin/settings", {
+    method: "POST",
+    headers: authHeader(token),
+    body: JSON.stringify(data),
   });
 }

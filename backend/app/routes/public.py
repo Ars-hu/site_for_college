@@ -105,7 +105,9 @@ def get_dates_status():
     from app.clock import get_now
     from datetime import timedelta
     now = get_now()
-    cutoff = now + timedelta(hours=24)
+    from app.models import SiteSettings
+    advance_hours = int(SiteSettings.get("advance_hours", "24"))
+    cutoff = now + timedelta(hours=advance_hours)
     # Dates within next 24 hours are fully blocked for new registrations
     blocked_within_24h = []
     # Check today and tomorrow
@@ -125,6 +127,7 @@ def get_dates_status():
         "blocked_within_24h": blocked_within_24h,
         "server_date": now.strftime("%Y-%m-%d"),
         "server_now": now.strftime("%Y-%m-%dT%H:%M:%S"),
+        "advance_hours": advance_hours,
     })
 
 
@@ -163,8 +166,10 @@ def register():
         except ValueError:
             return jsonify({"error": "Некорректный формат даты или времени"}), 400
         from datetime import timedelta
-        if slot_dt <= now + timedelta(hours=24):
-            return jsonify({"error": "Запись доступна минимум за 24 часа до приёма"}), 400
+        from app.models import SiteSettings
+        advance_hours = int(SiteSettings.get("advance_hours", "24"))
+        if slot_dt <= now + timedelta(hours=advance_hours):
+            return jsonify({"error": f"Запись доступна минимум за {advance_hours} ч до приёма"}), 400
 
         if not AllowedMonth.query.filter_by(year=date_obj.year, month=date_obj.month).first():
             return jsonify({"error": "Запись на этот месяц недоступна"}), 400
