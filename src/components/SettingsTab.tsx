@@ -214,8 +214,8 @@ function AdvanceHoursSettings({ token, onAuthError }: { token: string; onAuthErr
           <Timer className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h2 className="font-semibold text-gray-900">Минимальный срок записи</h2>
-          <p className="text-xs text-gray-500">За сколько часов до приёма разрешена запись. 0 = без ограничений.</p>
+          <h2 className="font-semibold text-gray-900">Недоступный период записи</h2>
+          <p className="text-xs text-gray-500">Пользователь не может записаться на ближайшие N часов от текущего момента. 0 = без ограничений.</p>
         </div>
       </div>
 
