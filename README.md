@@ -27,10 +27,20 @@
 - Настройка каждого временного слота: вместимость и блокировка
 - Управление разрешёнными месяцами записи
 
-## Запуск через Docker
+## Инструкция по запуску
 
+### 1. Клонирование репозитория:
 ```bash
-docker compose up --build
+# Клонирование через HTTPS
+git clone https://github.com/Ars-hu/site_for_college.git
+
+# Переход в директорию проекта
+cd site_for_college
+```
+
+### 2. Запуск через Docker Compose:
+```bash
+docker compose up --build -d
 ```
 
 После запуска:
