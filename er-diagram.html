@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>ER-диаграмма реляционной базы данных — АИС Онлайн-запись в приёмную комиссию</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@500;700&family=Roboto+Mono:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: 1800px;
+    height: 1050px;
+    background-color: #121316;
+    color: #e3e3e3;
+    font-family: 'Roboto', 'Google Sans', sans-serif;
+    position: relative;
+    overflow: hidden;
+  }
+
+  :root {
+    --g-blue: #8ab4f8;
+    --g-blue-bg: rgba(138, 180, 248, 0.12);
+    --g-red: #f28b82;
+    --g-red-bg: rgba(242, 139, 130, 0.12);
+    --g-yellow: #fdd663;
+    --g-yellow-bg: rgba(253, 214, 99, 0.12);
+    --g-green: #81c995;
+    --g-green-bg: rgba(129, 201, 149, 0.12);
+    --g-purple: #c58af9;
+    --g-orange: #ffab40;
+    --surface-1: #1e1f23;
+    --surface-2: #282a2f;
+    --surface-3: #32353b;
+    --border: rgba(255, 255, 255, 0.14);
+    --border-strong: rgba(255, 255, 255, 0.25);
+  }
+
+  .grid-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+    background-size: 28px 28px;
+    pointer-events: none;
+  }
+
+  /* Top Bar */
+  .top-bar {
+    height: 72px;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+    background: rgba(18, 19, 22, 0.85);
+    backdrop-filter: blur(8px);
+    position: relative;
+    z-index: 5;
+  }
+  .top-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .dots {
+    display: flex;
+    gap: 6px;
+  }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot.b { background: #8ab4f8; }
+  .dot.r { background: #f28b82; }
+  .dot.y { background: #fdd663; }
+  .dot.g { background: #81c995; }
+
+  .title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: -0.2px;
+  }
+  .subtitle {
+    font-size: 14px;
+    color: #8e918f;
+    margin-left: 12px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border);
+  }
+  .top-badges {
+    display: flex;
+    gap: 12px;
+  }
+  .chip {
+    padding: 6px 14px;
+    border-radius: 16px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+
+  /* Tables Grid Containers */
+  .table-box {
+    position: absolute;
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+    overflow: hidden;
+    z-index: 2;
+    transition: all 0.2s;
+  }
+  .table-box.core {
+    border-color: rgba(138, 180, 248, 0.45);
+    box-shadow: 0 10px 32px rgba(138, 180, 248, 0.15), 0 8px 24px rgba(0,0,0,0.6);
+  }
+  .table-box.archive {
+    border-color: rgba(253, 214, 99, 0.45);
+    box-shadow: 0 10px 32px rgba(253, 214, 99, 0.12), 0 8px 24px rgba(0,0,0,0.6);
+  }
+
+  .tbl-head {
+    padding: 10px 16px;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .tbl-name {
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 700;
+    font-size: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .tbl-type {
+    font-size: 11px;
+    text-transform: uppercase;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .tbl-rows {
+    padding: 6px 0;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 38px 1fr 140px;
+    padding: 5px 16px;
+    align-items: center;
+    font-size: 13px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+  .row:last-child {
+    border-bottom: none;
+  }
+  .row.pk-row {
+    background: rgba(138, 180, 248, 0.05);
+  }
+  .row.fk-row {
+    background: rgba(255, 171, 64, 0.06);
+  }
+  .col-title {
+    font-family: 'Roboto Mono', monospace;
+    color: #e3e3e3;
+  }
+  .col-title.bold {
+    font-weight: 700;
+    color: #ffffff;
+  }
+  .col-type {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 11px;
+    color: #8e918f;
+    text-align: right;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 4px;
+    font-size: 9px;
+    font-weight: 800;
+    border-radius: 3px;
+    font-family: 'Roboto Mono', monospace;
+    text-align: center;
+    width: 26px;
+  }
+  .badge.pk { background: #1a73e8; color: #ffffff; }
+  .badge.fk { background: var(--g-orange); color: #121316; }
+  .badge.uk { background: #ea4335; color: #ffffff; }
+  .badge.idx { background: #3c4043; color: #bdc1c6; }
+
+  /* SVG Lines Layer */
+  svg.diagram-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  /* Relation Tag on lines */
+  .rel-tag {
+    position: absolute;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-family: 'Roboto Mono', monospace;
+    font-weight: 700;
+    background: #1e1f23;
+    border: 1px solid var(--border-strong);
+    z-index: 3;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    transform: translate(-50%, -50%);
+  }
+
+  /* Legend Bottom */
+  .bottom-legend {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 52px;
+    background: rgba(18, 19, 22, 0.95);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 40px;
+    justify-content: space-between;
+    font-size: 13px;
+    z-index: 5;
+  }
+  .legend-items {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+  }
+  .leg-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .leg-bar {
+    width: 20px;
+    height: 3px;
+    border-radius: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<!-- Top Navigation -->
+<div class="top-bar">
+  <div class="top-left">
+    <div class="dots">
+      <div class="dot b"></div><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+    </div>
+    <div class="title">Полная реляционная схема базы данных • PostgreSQL 16 (3NF)</div>
+    <div class="subtitle">Информационная система онлайн-записи в приёмную комиссию • priem-konyaeva.ru</div>
+  </div>
+  <div class="top-badges">
+    <div class="chip" style="color: var(--g-blue); border-color: rgba(138,180,248,0.4);">Spring Data JPA / Hibernate</div>
+    <div class="chip" style="color: var(--g-green); border-color: rgba(129,201,149,0.4);">Внешние ключи (FK) • B-Tree Индексы</div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- SVG RELATIONAL CONNECTORS (ORTHOGONAL LINES WITH ARROWS & CROW'S FOOT)   -->
+<!-- ========================================================================= -->
+<svg class="diagram-lines">
+  <defs>
+    <marker id="arr-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#8ab4f8"/>
+    </marker>
+    <marker id="arr-yellow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#fdd663"/>
+    </marker>
+    <marker id="arr-green" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#81c995"/>
+    </marker>
+    <marker id="arr-red" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#f28b82"/>
+    </marker>
+    <marker id="arr-purple" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#c58af9"/>
+    </marker>
+    <marker id="arr-orange" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#ffab40"/>
+    </marker>
+
+    <!-- Circles for 1 side of relationship -->
+    <marker id="circle-blue" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5">
+      <circle cx="5" cy="5" r="3" fill="#8ab4f8" stroke="#121316" stroke-width="1"/>
+    </marker>
+    <marker id="circle-purple" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5">
+      <circle cx="5" cy="5" r="3" fill="#c58af9" stroke="#121316" stroke-width="1"/>
+    </marker>
+    <marker id="circle-green" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5">
+      <circle cx="5" cy="5" r="3" fill="#81c995" stroke="#121316" stroke-width="1"/>
+    </marker>
+    <marker id="circle-yellow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5">
+      <circle cx="5" cy="5" r="3" fill="#fdd663" stroke="#121316" stroke-width="1"/>
+    </marker>
+  </defs>
+
+  <!-- 1. admin.id (PK) -> site_settings.admin_id (FK) [1:N] -->
+  <path d="M 270 230 L 270 330" fill="none" stroke="#c58af9" stroke-width="2.5" marker-start="url(#circle-purple)" marker-end="url(#arr-purple)" />
+
+  <!-- 2. admin.id (PK) -> action_logs.admin_id (FK) [1:N] -->
+  <path d="M 120 230 L 120 570" fill="none" stroke="#c58af9" stroke-width="2.5" marker-start="url(#circle-purple)" marker-end="url(#arr-purple)" />
+
+  <!-- 3. admin.id -> slot_config (Administrative schedule management) [1:N] -->
+  <!-- Leaves admin right at y=170, goes over top to x=1220 y=170 -->
+  <path d="M 470 170 L 530 170 L 530 85 L 1170 85 L 1170 170 L 1220 170" fill="none" stroke="#c58af9" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arr-purple)" />
+
+  <!-- 4. application.id (PK) -> archived_application.original_id (FK) [1:1 Identifying] -->
+  <path d="M 850 480 L 850 580" fill="none" stroke="#fdd663" stroke-width="3" marker-start="url(#circle-yellow)" marker-end="url(#arr-yellow)" />
+
+  <!-- 5. slot_config.(date, time) -> application.(reg_date, reg_time) [1:N Slot Capacity] -->
+  <!-- Exit slot_config left at y=210, into application right at y=285 -->
+  <path d="M 1220 210 L 1170 210 L 1170 285 L 1120 285" fill="none" stroke="#8ab4f8" stroke-width="2.5" marker-start="url(#circle-blue)" marker-end="url(#arr-blue)" />
+
+  <!-- 6. daily_limit.date -> application.registration_date [1:N Daily Quota] -->
+  <!-- Exit daily_limit left at y=490, into application right at y=330 -->
+  <path d="M 1220 490 L 1150 490 L 1150 330 L 1120 330" fill="none" stroke="#81c995" stroke-width="2.5" marker-start="url(#circle-green)" marker-end="url(#arr-green)" />
+
+  <!-- 7. blocked_date.date -> slot_config.date [Calendar Restriction 1:N] -->
+  <!-- Exit blocked_date left at y=715, up to slot_config left at y=230 -->
+  <path d="M 1220 715 L 1180 715 L 1180 230 L 1220 230" fill="none" stroke="#f28b82" stroke-width="2" marker-end="url(#arr-red)" />
+
+  <!-- 8. opened_date.date -> slot_config.date [Weekend Override 1:N] -->
+  <!-- Exit opened_date left at y=885, up to x=1195 to slot_config at y=250 -->
+  <path d="M 1220 885 L 1195 885 L 1195 250 L 1220 250" fill="none" stroke="#81c995" stroke-width="2" marker-end="url(#arr-green)" />
+
+  <!-- 9. allowed_month.(year, month) -> daily_limit.date [1:N Campaign Range] -->
+  <!-- Exit allowed_month right at y=880, down across bottom to daily_limit at y=520 -->
+  <path d="M 470 880 L 850 880 L 850 970 L 1480 970 L 1480 560" fill="none" stroke="#fdd663" stroke-width="2" stroke-dasharray="6 4" marker-end="url(#arr-yellow)" />
+</svg>
+
+<!-- Relation Badges directly on lines -->
+<div class="rel-tag" style="top: 280px; left: 270px; color: var(--g-purple);">1:N (admin_id ➔ id)</div>
+<div class="rel-tag" style="top: 400px; left: 120px; color: var(--g-purple);">1:N (audit logs)</div>
+<div class="rel-tag" style="top: 85px; left: 850px; color: var(--g-purple);">Управление слотами комиссии</div>
+<div class="rel-tag" style="top: 530px; left: 850px; color: var(--g-yellow);">1:1 (original_id ➔ id)</div>
+<div class="rel-tag" style="top: 250px; left: 1170px; color: var(--g-blue);">1:N (слот ➔ заявки)</div>
+<div class="rel-tag" style="top: 410px; left: 1150px; color: var(--g-green);">1:N (суточный лимит)</div>
+<div class="rel-tag" style="top: 715px; left: 1145px; color: var(--g-red);">1:N (блок)</div>
+<div class="rel-tag" style="top: 885px; left: 1145px; color: var(--g-green);">1:N (субботы)</div>
+<div class="rel-tag" style="top: 970px; left: 1165px; color: var(--g-yellow);">1:N (период кампании ➔ даты)</div>
+
+<!-- ========================================================================= -->
+<!-- COL 1: АДМИНИСТРАТИВНЫЙ КОНТУР И АУДИТ (X = 60px)                          -->
+<!-- ========================================================================= -->
+
+<!-- 1. admin -->
+<div class="table-box" style="top: 105px; left: 60px; width: 410px;">
+  <div class="tbl-head">
+    <div class="tbl-name" style="color: var(--g-purple);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+      admin
+    </div>
+    <div class="tbl-type" style="background: rgba(197, 138, 249, 0.15); color: var(--g-purple);">Приёмная комиссия</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row">
+      <div><span class="badge uk">UK</span></div>
+      <div class="col-title bold">username</div>
+      <div class="col-type">VARCHAR(50) NOT NULL</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">password_hash</div>
+      <div class="col-type">VARCHAR(255) (BCrypt)</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">role</div>
+      <div class="col-type">VARCHAR(30) 'ROLE_ADMIN'</div>
+    </div>
+  </div>
+</div>
+
+<!-- 2. site_settings -->
+<div class="table-box" style="top: 330px; left: 60px; width: 410px;">
+  <div class="tbl-head">
+    <div class="tbl-name" style="color: var(--g-purple);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+      site_settings
+    </div>
+    <div class="tbl-type" style="background: rgba(197, 138, 249, 0.15); color: var(--g-purple);">Параметры системы</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row fk-row">
+      <div><span class="badge fk">FK</span></div>
+      <div class="col-title bold" style="color: var(--g-orange);">admin_id</div>
+      <div class="col-type">BIGINT ➔ admin.id</div>
+    </div>
+    <div class="row">
+      <div><span class="badge uk">UK</span></div>
+      <div class="col-title bold">key</div>
+      <div class="col-type">VARCHAR(50) NOT NULL</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">value</div>
+      <div class="col-type">VARCHAR(100)</div>
+    </div>
+  </div>
+</div>
+
+<!-- 3. action_logs (Журнал аудита) -->
+<div class="table-box" style="top: 570px; left: 60px; width: 410px;">
+  <div class="tbl-head">
+    <div class="tbl-name" style="color: var(--g-purple);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+      action_logs
+    </div>
+    <div class="tbl-type" style="background: rgba(197, 138, 249, 0.15); color: var(--g-purple);">Аудит действий</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row fk-row">
+      <div><span class="badge fk">FK</span></div>
+      <div class="col-title bold" style="color: var(--g-orange);">admin_id</div>
+      <div class="col-type">BIGINT ➔ admin.id</div>
+    </div>
+    <div class="row">
+      <div><span class="badge idx">IDX</span></div>
+      <div class="col-title">action_type</div>
+      <div class="col-type">VARCHAR(50) NOT NULL</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">description</div>
+      <div class="col-type">TEXT NOT NULL</div>
+    </div>
+    <div class="row">
+      <div><span class="badge idx">IDX</span></div>
+      <div class="col-title">created_at</div>
+      <div class="col-type">TIMESTAMPTZ NOW()</div>
+    </div>
+  </div>
+</div>
+
+<!-- 4. allowed_month -->
+<div class="table-box" style="top: 810px; left: 60px; width: 410px;">
+  <div class="tbl-head">
+    <div class="tbl-name" style="color: var(--g-yellow);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+      allowed_month
+    </div>
+    <div class="tbl-type" style="background: var(--g-yellow-bg); color: var(--g-yellow);">Период кампании</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">year</div>
+      <div class="col-type">INT NOT NULL</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">month</div>
+      <div class="col-type">INT NOT NULL (1–12)</div>
+    </div>
+    <div class="row">
+      <div><span class="badge uk">UK</span></div>
+      <div class="col-title">uq_allowed_month</div>
+      <div class="col-type">(year, month)</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- COL 2: ТРАНЗАКЦИОННОЕ ЯДРО (X = 580px)                                    -->
+<!-- ========================================================================= -->
+
+<!-- 5. application -->
+<div class="table-box core" style="top: 105px; left: 580px; width: 540px;">
+  <div class="tbl-head" style="background: rgba(138, 180, 248, 0.12);">
+    <div class="tbl-name" style="color: var(--g-blue);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+      application
+    </div>
+    <div class="tbl-type" style="background: var(--g-blue); color: #121316; font-weight: 700;">Актуальные записи</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">fio</div>
+      <div class="col-type">VARCHAR(255) NOT NULL</div>
+    </div>
+    <div class="row">
+      <div><span class="badge idx">IDX</span></div>
+      <div class="col-title">phone</div>
+      <div class="col-type">VARCHAR(20) NOT NULL</div>
+    </div>
+    <div class="row">
+      <div><span class="badge idx">IDX</span></div>
+      <div class="col-title">email</div>
+      <div class="col-type">VARCHAR(100) NOT NULL</div>
+    </div>
+    <div class="row fk-row">
+      <div><span class="badge fk">FK</span></div>
+      <div class="col-title bold" style="color: var(--g-orange);">registration_date</div>
+      <div class="col-type">VARCHAR(20) ➔ daily_limit</div>
+    </div>
+    <div class="row fk-row">
+      <div><span class="badge fk">FK</span></div>
+      <div class="col-title bold" style="color: var(--g-orange);">(date, time)</div>
+      <div class="col-type">➔ slot_config (1:N)</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">status</div>
+      <div class="col-type">VARCHAR(20) 'pending'</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">created_at</div>
+      <div class="col-type">TIMESTAMPTZ NOW()</div>
+    </div>
+  </div>
+</div>
+
+<!-- 6. archived_application -->
+<div class="table-box archive" style="top: 580px; left: 580px; width: 540px;">
+  <div class="tbl-head" style="background: rgba(253, 214, 99, 0.12);">
+    <div class="tbl-name" style="color: var(--g-yellow);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M20.54 5.23l-1.39-1.68C18.88 3.21 18.47 3 18 3H6c-.47 0-.88.21-1.16.55L3.46 5.23C3.17 5.57 3 6.02 3 6.5V19c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6.5c0-.48-.17-.93-.46-1.27zM12 17.5L6.5 12H10v-2h4v2h3.5L12 17.5zM5.12 5l.81-1h12l.94 1H5.12z"/></svg>
+      archived_application
+    </div>
+    <div class="tbl-type" style="background: var(--g-yellow); color: #121316; font-weight: 700;">Архив приёма</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row fk-row">
+      <div><span class="badge fk">FK</span></div>
+      <div class="col-title bold" style="color: var(--g-orange);">original_id</div>
+      <div class="col-type">BIGINT ➔ application.id (1:1)</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">fio</div>
+      <div class="col-type">VARCHAR(255)</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">phone</div>
+      <div class="col-type">VARCHAR(20)</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">email</div>
+      <div class="col-type">VARCHAR(100)</div>
+    </div>
+    <div class="row">
+      <div><span class="badge idx">IDX</span></div>
+      <div class="col-title">registration_date</div>
+      <div class="col-type">VARCHAR(20)</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">registration_time</div>
+      <div class="col-type">VARCHAR(10)</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">status</div>
+      <div class="col-type">VARCHAR(20)</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">archived_at</div>
+      <div class="col-type">TIMESTAMPTZ NOW()</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- COL 3: КАЛЕНДАРНЫЙ ДВИЖОК И СЛОТЫ (X = 1220px)                            -->
+<!-- ========================================================================= -->
+
+<!-- 7. slot_config -->
+<div class="table-box" style="top: 105px; left: 1220px; width: 520px;">
+  <div class="tbl-head">
+    <div class="tbl-name" style="color: var(--g-blue);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/></svg>
+      slot_config
+    </div>
+    <div class="tbl-type" style="background: var(--g-blue-bg); color: var(--g-blue);">Лимит 10-мин слота</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row">
+      <div><span class="badge idx">IDX</span></div>
+      <div class="col-title bold">date</div>
+      <div class="col-type">VARCHAR(20) NOT NULL</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title bold">time</div>
+      <div class="col-type">VARCHAR(10) NOT NULL</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">max_capacity</div>
+      <div class="col-type">INT DEFAULT 3</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">is_blocked</div>
+      <div class="col-type">BOOLEAN FALSE</div>
+    </div>
+    <div class="row">
+      <div><span class="badge uk">UK</span></div>
+      <div class="col-title">uq_slot_date_time</div>
+      <div class="col-type">(date, time)</div>
+    </div>
+  </div>
+</div>
+
+<!-- 8. daily_limit -->
+<div class="table-box" style="top: 410px; left: 1220px; width: 520px;">
+  <div class="tbl-head">
+    <div class="tbl-name" style="color: var(--g-green);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
+      daily_limit
+    </div>
+    <div class="tbl-type" style="background: var(--g-green-bg); color: var(--g-green);">Суточная квота</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row">
+      <div><span class="badge uk">UK</span></div>
+      <div class="col-title bold">date</div>
+      <div class="col-type">VARCHAR(20) NOT NULL</div>
+    </div>
+    <div class="row">
+      <div></div>
+      <div class="col-title">max_registrations</div>
+      <div class="col-type">INT NOT NULL DEFAULT 0</div>
+    </div>
+  </div>
+</div>
+
+<!-- 9. blocked_date -->
+<div class="table-box" style="top: 640px; left: 1220px; width: 520px;">
+  <div class="tbl-head">
+    <div class="tbl-name" style="color: var(--g-red);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11H7v-2h10v2z"/></svg>
+      blocked_date
+    </div>
+    <div class="tbl-type" style="background: var(--g-red-bg); color: var(--g-red);">Заблокированные дни</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row">
+      <div><span class="badge uk">UK</span></div>
+      <div class="col-title bold">date</div>
+      <div class="col-type">VARCHAR(20) NOT NULL UNIQUE</div>
+    </div>
+  </div>
+</div>
+
+<!-- 10. opened_date -->
+<div class="table-box" style="top: 810px; left: 1220px; width: 520px;">
+  <div class="tbl-head">
+    <div class="tbl-name" style="color: var(--g-green);">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+      opened_date
+    </div>
+    <div class="tbl-type" style="background: var(--g-green-bg); color: var(--g-green);">Открытые субботы</div>
+  </div>
+  <div class="tbl-rows">
+    <div class="row pk-row">
+      <div><span class="badge pk">PK</span></div>
+      <div class="col-title bold">id</div>
+      <div class="col-type">BIGSERIAL</div>
+    </div>
+    <div class="row">
+      <div><span class="badge uk">UK</span></div>
+      <div class="col-title bold">date</div>
+      <div class="col-type">VARCHAR(20) NOT NULL UNIQUE</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========================================================================= -->
+<!-- BOTTOM LEGEND                                                             -->
+<!-- ========================================================================= -->
+<div class="bottom-legend">
+  <div class="legend-items">
+    <div class="leg-item">
+      <div class="leg-bar" style="background: var(--g-yellow);"></div>
+      <span><strong>1:1 Архивация:</strong> Перенос завершённых заявок по расписанию (original_id ➔ id)</span>
+    </div>
+    <div class="leg-item">
+      <div class="leg-bar" style="background: var(--g-blue);"></div>
+      <span><strong>1:N Квота слота:</strong> Ограничение числа посетителей в 10-минутном интервале (max_capacity)</span>
+    </div>
+    <div class="leg-item">
+      <div class="leg-bar" style="background: var(--g-green);"></div>
+      <span><strong>1:N Суточный лимит:</strong> Контроль максимума абитуриентов в день (max_registrations)</span>
+    </div>
+    <div class="leg-item">
+      <div class="leg-bar" style="background: var(--g-purple);"></div>
+      <span><strong>1:N Администрирование:</strong> Аудит действий и настройка параметров комиссии</span>
+    </div>
+  </div>
+  <div style="color: #8e918f; font-size: 12px; font-family: 'Roboto Mono', monospace;">
+    ACID Гарантии • Индексы по датам и телефонам • PostgreSQL 16
+  </div>
+</div>
+
+</body>
+</html>
