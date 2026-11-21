@@ -22,17 +22,17 @@
     --g-border: rgba(255, 255, 255, 0.12);
     --g-border-strong: rgba(255, 255, 255, 0.25);
     --g-blue: #8ab4f8;
-    --g-blue-bg: rgba(138, 180, 248, 0.14);
+    --g-blue-bg: rgba(138, 180, 248, 0.15);
     --g-red: #f28b82;
-    --g-red-bg: rgba(242, 139, 130, 0.14);
+    --g-red-bg: rgba(242, 139, 130, 0.15);
     --g-yellow: #fdd663;
-    --g-yellow-bg: rgba(253, 214, 99, 0.14);
+    --g-yellow-bg: rgba(253, 214, 99, 0.15);
     --g-green: #81c995;
-    --g-green-bg: rgba(129, 201, 149, 0.14);
+    --g-green-bg: rgba(129, 201, 149, 0.15);
     --g-purple: #c58af9;
     --text-primary: #ffffff;
-    --text-secondary: #cdd1ce;
-    --text-muted: #9aa0a6;
+    --text-secondary: #d2d5d8;
+    --text-muted: #a0a4a8;
     --font-sans: 'Google Sans', 'Roboto', -apple-system, BlinkMacSystemFont, sans-serif;
     --font-mono: 'Roboto Mono', 'JetBrains Mono', monospace;
   }
@@ -44,7 +44,7 @@
 
   html, body {
     width: 100%;
-    background: var(--g-bg);
+    background: #0d0e11;
     color: var(--text-primary);
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -53,26 +53,55 @@
     print-color-adjust: exact;
   }
 
+  /* Презентационный контейнер для экрана */
+  @media screen {
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 0 60px 0;
+      gap: 36px;
+    }
+    .slide {
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75);
+      border-radius: 16px;
+    }
+  }
+
+  /* Для печати и генерации PDF */
+  @media print {
+    body {
+      background: var(--g-bg);
+      padding: 0;
+      margin: 0;
+    }
+    .slide {
+      box-shadow: none;
+      border-radius: 0;
+      page-break-after: always;
+      break-after: page;
+    }
+  }
+
   .slide {
     width: 1920px;
     height: 1080px;
-    padding: 46px 72px 34px 72px;
+    padding: 38px 64px 28px 64px;
     box-sizing: border-box;
     position: relative;
     overflow: hidden;
     background-color: var(--g-bg);
-    page-break-after: always;
-    break-after: page;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    flex-shrink: 0;
   }
 
   .slide::before {
     content: '';
     position: absolute;
     top: 0; left: 0; width: 100%; height: 100%;
-    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+    background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.06) 1px, transparent 0);
     background-size: 36px 36px;
     pointer-events: none;
     z-index: 0;
@@ -87,47 +116,47 @@
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    margin-bottom: 20px;
+    margin-bottom: 18px;
   }
   .header-meta {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 16px;
     margin-bottom: 8px;
   }
   .slide-chip {
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    padding: 7px 20px;
+    padding: 8px 22px;
     border-radius: 9999px;
-    font-size: 17px;
+    font-size: 19px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.6px;
     background: var(--g-surface-high);
     border: 1px solid var(--g-border);
   }
-  .slide-chip.blue { color: var(--g-blue); border-color: rgba(138, 180, 248, 0.45); background: var(--g-blue-bg); }
-  .slide-chip.green { color: var(--g-green); border-color: rgba(129, 201, 149, 0.45); background: var(--g-green-bg); }
-  .slide-chip.yellow { color: var(--g-yellow); border-color: rgba(253, 214, 99, 0.45); background: var(--g-yellow-bg); }
-  .slide-chip.red { color: var(--g-red); border-color: rgba(242, 139, 130, 0.45); background: var(--g-red-bg); }
+  .slide-chip.blue { color: var(--g-blue); border-color: rgba(138, 180, 248, 0.5); background: var(--g-blue-bg); }
+  .slide-chip.green { color: var(--g-green); border-color: rgba(129, 201, 149, 0.5); background: var(--g-green-bg); }
+  .slide-chip.yellow { color: var(--g-yellow); border-color: rgba(253, 214, 99, 0.5); background: var(--g-yellow-bg); }
+  .slide-chip.red { color: var(--g-red); border-color: rgba(242, 139, 130, 0.5); background: var(--g-red-bg); }
 
   .slide-org {
-    font-size: 18px;
+    font-size: 20px;
     color: var(--text-muted);
     font-weight: 500;
   }
 
   .slide-title {
-    font-size: 50px;
+    font-size: 56px;
     font-weight: 700;
     color: #ffffff;
     line-height: 1.15;
     letter-spacing: -0.8px;
   }
   .slide-subtitle {
-    font-size: 24px;
+    font-size: 26px;
     color: var(--text-secondary);
     margin-top: 6px;
     font-weight: 400;
@@ -135,11 +164,11 @@
 
   .slide-badge-num {
     font-family: var(--font-mono);
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--text-muted);
     background: var(--g-surface-high);
-    padding: 10px 22px;
+    padding: 10px 24px;
     border-radius: 14px;
     border: 1px solid var(--g-border);
   }
@@ -161,17 +190,17 @@
   .footer-left {
     display: flex;
     align-items: center;
-    gap: 14px;
-    font-size: 16px;
+    gap: 16px;
+    font-size: 18px;
     color: var(--text-muted);
   }
   .google-dots-mini {
     display: flex;
-    gap: 6px;
+    gap: 7px;
   }
   .g-dot {
-    width: 9px;
-    height: 9px;
+    width: 10px;
+    height: 10px;
     border-radius: 50%;
   }
   .g-dot.blue { background: #4285f4; }
@@ -181,14 +210,14 @@
 
   .footer-right {
     font-family: var(--font-mono);
-    font-size: 16px;
+    font-size: 18px;
     color: var(--text-muted);
   }
 
   .card-grid-2 {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 28px;
+    gap: 30px;
   }
   .card-grid-3 {
     display: grid;
@@ -206,10 +235,10 @@
     background: var(--g-surface);
     border: 1px solid var(--g-border);
     border-radius: 22px;
-    padding: 28px 32px;
+    padding: 28px 34px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
     justify-content: space-between;
@@ -229,28 +258,28 @@
     margin-bottom: 16px;
   }
   .m3-icon-box {
-    width: 62px;
-    height: 62px;
+    width: 66px;
+    height: 66px;
     border-radius: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 28px;
+    font-size: 30px;
     flex-shrink: 0;
   }
-  .m3-icon-box.blue { background: var(--g-blue-bg); color: var(--g-blue); border: 1px solid rgba(138,180,248,0.35); }
-  .m3-icon-box.green { background: var(--g-green-bg); color: var(--g-green); border: 1px solid rgba(129,201,149,0.35); }
-  .m3-icon-box.yellow { background: var(--g-yellow-bg); color: var(--g-yellow); border: 1px solid rgba(253,214,99,0.35); }
-  .m3-icon-box.red { background: var(--g-red-bg); color: var(--g-red); border: 1px solid rgba(242,139,130,0.35); }
+  .m3-icon-box.blue { background: var(--g-blue-bg); color: var(--g-blue); border: 1px solid rgba(138,180,248,0.4); }
+  .m3-icon-box.green { background: var(--g-green-bg); color: var(--g-green); border: 1px solid rgba(129,201,149,0.4); }
+  .m3-icon-box.yellow { background: var(--g-yellow-bg); color: var(--g-yellow); border: 1px solid rgba(253,214,99,0.4); }
+  .m3-icon-box.red { background: var(--g-red-bg); color: var(--g-red); border: 1px solid rgba(242,139,130,0.4); }
 
   .card-title {
-    font-size: 28px;
+    font-size: 30px;
     font-weight: 700;
     color: #ffffff;
     line-height: 1.25;
   }
   .card-desc {
-    font-size: 21px;
+    font-size: 22px;
     color: var(--text-secondary);
     line-height: 1.55;
     margin-bottom: 16px;
@@ -266,30 +295,31 @@
     display: flex;
     align-items: flex-start;
     gap: 14px;
-    font-size: 20px;
+    font-size: 21px;
     color: var(--text-secondary);
-    line-height: 1.5;
+    line-height: 1.48;
   }
   .bullet-check {
-    width: 26px;
-    height: 26px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
     flex-shrink: 0;
-    margin-top: 3px;
+    margin-top: 2px;
   }
   .bullet-check.blue { background: var(--g-blue-bg); color: var(--g-blue); }
   .bullet-check.green { background: var(--g-green-bg); color: var(--g-green); }
   .bullet-check.yellow { background: var(--g-yellow-bg); color: var(--g-yellow); }
+  .bullet-check.red { background: var(--g-red-bg); color: var(--g-red); }
 
   /* Postman Screenshot Card Layout */
   .api-showcase-grid {
     display: grid;
-    grid-template-columns: 1.05fr 1fr;
+    grid-template-columns: 1fr 1fr;
     gap: 32px;
     align-items: stretch;
   }
@@ -301,12 +331,12 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 16px 44px rgba(0, 0, 0, 0.65);
   }
   .postman-img-frame img {
     width: 100%;
     height: auto;
-    max-height: 580px;
+    max-height: 590px;
     object-fit: contain;
     display: block;
   }
@@ -329,9 +359,9 @@
   }
   .http-method {
     font-family: var(--font-mono);
-    font-size: 19px;
+    font-size: 21px;
     font-weight: 800;
-    padding: 7px 16px;
+    padding: 7px 18px;
     border-radius: 8px;
     text-transform: uppercase;
   }
@@ -339,15 +369,15 @@
   .http-method.get { background: #34a853; color: #ffffff; }
   .http-endpoint {
     font-family: var(--font-mono);
-    font-size: 23px;
+    font-size: 25px;
     color: #ffffff;
     font-weight: 600;
   }
   .http-status {
     font-family: var(--font-mono);
-    font-size: 18px;
+    font-size: 19px;
     font-weight: 700;
-    padding: 7px 14px;
+    padding: 7px 15px;
     border-radius: 8px;
     background: var(--g-green-bg);
     color: var(--g-green);
@@ -366,16 +396,16 @@
   }
   .m3-table th {
     background: var(--g-surface-high);
-    padding: 20px 26px;
-    font-size: 21px;
+    padding: 22px 28px;
+    font-size: 23px;
     font-weight: 700;
     color: #ffffff;
     text-align: left;
     border-bottom: 1px solid var(--g-border);
   }
   .m3-table td {
-    padding: 22px 26px;
-    font-size: 20px;
+    padding: 24px 28px;
+    font-size: 22px;
     color: var(--text-secondary);
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     line-height: 1.6;
@@ -386,9 +416,9 @@
   .role-pill {
     display: inline-block;
     font-family: var(--font-mono);
-    font-size: 17px;
+    font-size: 18px;
     font-weight: 700;
-    padding: 5px 12px;
+    padding: 6px 14px;
     border-radius: 8px;
   }
   .role-pill.applicant { background: var(--g-blue-bg); color: var(--g-blue); }
@@ -396,7 +426,7 @@
 
   .er-diagram-container {
     width: 100%;
-    height: 780px;
+    height: 800px;
     background: transparent;
     border: none;
     overflow: hidden;
@@ -410,7 +440,7 @@
     object-fit: contain;
     border-radius: 18px;
     border: 1px solid var(--g-border-strong);
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 14px 40px rgba(0, 0, 0, 0.65);
   }
 </style>
 </head>
@@ -436,37 +466,37 @@
     <div class="slide-badge-num">01 / 14</div>
   </div>
 
-  <div class="slide-content" style="justify-content: center; gap: 36px;">
+  <div class="slide-content" style="justify-content: center; gap: 38px;">
     <div>
-      <h1 style="font-size: 58px; font-weight: 800; color: #ffffff; line-height: 1.15; letter-spacing: -1px; margin-bottom: 18px;">
+      <h1 style="font-size: 64px; font-weight: 800; color: #ffffff; line-height: 1.15; letter-spacing: -1px; margin-bottom: 20px;">
         Информационная система<br>
         <span style="color: var(--g-blue);">«Онлайн-запись в приёмную комиссию колледжа»</span>
       </h1>
-      <p style="font-size: 25px; color: var(--text-secondary); max-width: 1500px; line-height: 1.45;">
+      <p style="font-size: 28px; color: var(--text-secondary); max-width: 1550px; line-height: 1.45;">
         Серверная часть действующего сервиса предварительной записи абитуриентов сайта <strong style="color: #ffffff;">priem-konyaeva.ru</strong> на стеке <strong style="color: var(--g-blue);">Java 21 LTS + Spring Boot 3 + PostgreSQL 16</strong>
       </p>
     </div>
 
-    <div class="card-grid-3" style="margin-top: 10px;">
+    <div class="card-grid-3" style="margin-top: 12px;">
       <div class="m3-card elevated border-blue">
-        <div class="card-title" style="font-size: 20px; color: var(--g-blue); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Разработчик проекта</div>
-        <div style="font-size: 28px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">Васильев Арсений Алексеевич</div>
-        <div style="font-size: 20px; color: var(--text-secondary);">Студент группы <strong>3-ИС4</strong></div>
-        <div style="font-size: 18px; color: var(--text-muted); margin-top: 4px;">Специальность 09.02.07 «Информационные системы и программирование»</div>
+        <div class="card-title" style="font-size: 22px; color: var(--g-blue); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Разработчик проекта</div>
+        <div style="font-size: 32px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">Васильев Арсений Алексеевич</div>
+        <div style="font-size: 23px; color: var(--text-secondary);">Студент группы <strong>3-ИС4</strong></div>
+        <div style="font-size: 20px; color: var(--text-muted); margin-top: 6px;">Специальность 09.02.07 «Информационные системы и программирование»</div>
       </div>
 
       <div class="m3-card elevated border-green">
-        <div class="card-title" style="font-size: 20px; color: var(--g-green); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Архитектурный стек</div>
-        <div style="font-size: 28px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">Java 21 LTS & Spring Boot 3</div>
-        <div style="font-size: 20px; color: var(--text-secondary);">PostgreSQL 16 • Spring Security 6 • Docker</div>
-        <div style="font-size: 18px; color: var(--text-muted); margin-top: 4px;">Apache POI (XLSX) • Nginx Reverse Proxy (SSL)</div>
+        <div class="card-title" style="font-size: 22px; color: var(--g-green); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Архитектурный стек</div>
+        <div style="font-size: 32px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">Java 21 LTS & Spring Boot 3</div>
+        <div style="font-size: 23px; color: var(--text-secondary);">PostgreSQL 16 • Spring Security 6 • Docker</div>
+        <div style="font-size: 20px; color: var(--text-muted); margin-top: 6px;">Apache POI (XLSX) • Nginx Reverse Proxy (SSL)</div>
       </div>
 
       <div class="m3-card elevated border-yellow">
-        <div class="card-title" style="font-size: 20px; color: var(--g-yellow); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">Статус системы</div>
-        <div style="font-size: 28px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">Действующий продакшн</div>
-        <div style="font-size: 20px; color: var(--text-secondary);">Развернут на собственном сервере</div>
-        <div style="font-size: 18px; color: var(--text-muted); margin-top: 4px;">Публичный доступ: https://priem-konyaeva.ru</div>
+        <div class="card-title" style="font-size: 22px; color: var(--g-yellow); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">Статус системы</div>
+        <div style="font-size: 32px; font-weight: 700; color: #ffffff; margin-bottom: 10px;">Действующий продакшн</div>
+        <div style="font-size: 23px; color: var(--text-secondary);">Развернут на собственном сервере</div>
+        <div style="font-size: 20px; color: var(--text-muted); margin-top: 6px;">Публичный доступ: https://priem-konyaeva.ru</div>
       </div>
     </div>
   </div>
@@ -506,11 +536,11 @@
       <div class="m3-card border-yellow">
         <div class="card-icon-header">
           <div class="m3-icon-box yellow">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
           </div>
           <div>
             <div class="card-title">Текущее внедрение на Python</div>
-            <div style="font-size: 18px; color: var(--g-yellow);">Flask 3.0 + Gunicorn + SQLAlchemy</div>
+            <div style="font-size: 20px; color: var(--g-yellow);">Flask 3.0 + Gunicorn + SQLAlchemy</div>
           </div>
         </div>
         <div class="card-desc">
@@ -519,15 +549,15 @@
         <ul class="bullet-list">
           <li class="bullet-item">
             <span class="bullet-check yellow">✕</span>
-            <span><strong>GIL (Global Interpreter Lock):</strong> ограничение параллельной обработки тяжёлых CPU-задач внутри воркера;</span>
+            <span><strong>GIL (Global Interpreter Lock):</strong> блокировка параллельной обработки тяжёлых задач внутри процесса;</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check yellow">✕</span>
-            <span><strong>Динамическая типизация:</strong> риск ошибок во время исполнения при рефакторинге контрактов API;</span>
+            <span><strong>Динамическая типизация:</strong> повышенный риск ошибок в рантайме при модификации контрактов API;</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check yellow">✕</span>
-            <span><strong>Снижение пропускной способности:</strong> падение RPS при одновременных запросах сотен абитуриентов в 9:00.</span>
+            <span><strong>Снижение пропускной способности:</strong> падение RPS при одновременном наплыве сотен абитуриентов.</span>
           </li>
         </ul>
       </div>
@@ -535,11 +565,11 @@
       <div class="m3-card border-green">
         <div class="card-icon-header">
           <div class="m3-icon-box green">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
           </div>
           <div>
             <div class="card-title">Модернизация на Java Spring Boot</div>
-            <div style="font-size: 18px; color: var(--g-green);">Java 21 LTS + Spring Boot 3.3.5</div>
+            <div style="font-size: 20px; color: var(--g-green);">Java 21 LTS + Spring Boot 3.3.5</div>
           </div>
         </div>
         <div class="card-desc">
@@ -548,15 +578,15 @@
         <ul class="bullet-list">
           <li class="bullet-item">
             <span class="bullet-check green">✓</span>
-            <span><strong>Многопоточная архитектура:</strong> параллельное обслуживание запросов без накладных расходов GIL;</span>
+            <span><strong>Многопоточная архитектура:</strong> параллельное обслуживание запросов без накладных ограничений GIL;</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check green">✓</span>
-            <span><strong>Строгая статическая типизация:</strong> DTO с валидацией Jakarta Bean Validation (JSR-380);</span>
+            <span><strong>Строгая статическая типизация:</strong> строгие DTO с валидацией Jakarta Bean Validation (JSR-380);</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check green">✓</span>
-            <span><strong>Рост пропускной способности на +48.7%:</strong> подтверждено стресс-тестами ApacheBench при c=70.</span>
+            <span><strong>Рост пропускной способности на +48.7%:</strong> подтверждено реальными стресс-тестами ApacheBench при c=70.</span>
           </li>
         </ul>
       </div>
@@ -598,28 +628,28 @@
       <div class="m3-card elevated border-blue">
         <div class="card-icon-header">
           <div class="m3-icon-box blue">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L1 9l11 6 9-4.91V17h2V9L12 3z M5 13.18v4L12 21l7-3.82v-4L12 17l-7-3.82z"/></svg>
           </div>
           <div>
             <div class="card-title">1. Абитуриенты</div>
-            <div style="font-size: 18px; color: var(--g-blue);">Внешние публичные пользователи сайта priem-konyaeva.ru</div>
+            <div style="font-size: 20px; color: var(--g-blue);">Внешние публичные пользователи сайта priem-konyaeva.ru</div>
           </div>
         </div>
         <div class="card-desc">
-          Выпускники 9-х и 11-х классов школ, а также их законные представители, осуществляющие подачу документов в колледж:
+          Выпускники 9-х и 11-х классов школ, а также их законные представители, осуществляющие подачу документов:
         </div>
         <ul class="bullet-list">
           <li class="bullet-item">
             <span class="bullet-check blue">1</span>
-            <span>Просмотр доступных дат приёма и свободных временных интервалов (слотов) в реальном времени;</span>
+            <span>Просмотр доступных дат приёма и свободных временных слотов в реальном времени;</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check blue">2</span>
-            <span>Выбор целевой специальности (09.02.07 «Информационные системы» и др.) и оснований обучения (бюджет / договор);</span>
+            <span>Выбор целевой специальности (09.02.07 «Информационные системы») и оснований обучения;</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check blue">3</span>
-            <span>Оформление записи без обязательной сложной регистрации через Госуслуги — мгновенное получение электронного талона.</span>
+            <span>Быстрое оформление записи без сложной авторизации — мгновенное получение электронного талона.</span>
           </li>
         </ul>
       </div>
@@ -627,28 +657,28 @@
       <div class="m3-card elevated border-green">
         <div class="card-icon-header">
           <div class="m3-icon-box green">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/></svg>
           </div>
           <div>
             <div class="card-title">2. Сотрудники приёмной комиссии</div>
-            <div style="font-size: 18px; color: var(--g-green);">Внутренние пользователи (административный контур)</div>
+            <div style="font-size: 20px; color: var(--g-green);">Внутренние пользователи (административный контур)</div>
           </div>
         </div>
         <div class="card-desc">
-          Ответственный секретарь и члены приёмной комиссии колледжа, работающие с потоком поступающих:
+          Ответственный секретарь и члены комиссии колледжа, управляющие потоком поступающих:
         </div>
         <ul class="bullet-list">
           <li class="bullet-item">
             <span class="bullet-check green">1</span>
-            <span>Формирование расписания приёма: создание рабочих окон, лимитов талонов на интервал и блокировка праздничных дней;</span>
+            <span>Формирование расписания приёма: создание рабочих окон, лимитов талонов и блокировка дней;</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check green">2</span>
-            <span>Управление потоком абитуриентов: отметка явки, фиксация статусов приёма оригиналов документов;</span>
+            <span>Управление потоком абитуриентов: отметка явки, фиксация статусов приёма оригиналов;</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check green">3</span>
-            <span>Анализ статистики приёма и экспорт официальных ведомостей в формат Excel (XLSX) по ГОСТ.</span>
+            <span>Анализ статистики приёма и экспорт официальных ведомостей в формат Excel (XLSX).</span>
           </li>
         </ul>
       </div>
@@ -689,45 +719,45 @@
     <table class="m3-table">
       <thead>
         <tr>
-          <th style="width: 20%;">Роль в системе</th>
+          <th style="width: 22%;">Роль в системе</th>
           <th style="width: 32%;">Аутентификация</th>
-          <th style="width: 48%;">Доступный функционал и права</th>
+          <th style="width: 46%;">Доступный функционал и права</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>
-            <div style="font-size: 22px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Абитуриент</div>
+            <div style="font-size: 26px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">Абитуриент</div>
             <span class="role-pill applicant">ROLE_APPLICANT</span>
           </td>
           <td>
-            <div style="color: #ffffff; font-weight: 600; font-size: 21px;">Анонимный доступ (Публичный)</div>
-            <div style="font-size: 18px; color: var(--text-muted); margin-top: 4px;">Не требует предварительного логина или пароля</div>
+            <div style="color: #ffffff; font-weight: 600; font-size: 23px;">Анонимный доступ (Публичный)</div>
+            <div style="font-size: 20px; color: var(--text-muted); margin-top: 6px;">Не требует предварительного логина или пароля</div>
           </td>
           <td>
-            <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px;">
-              <li>• Просмотр календаря свободных слотов (<code style="color: var(--g-blue); font-size: 19px;">GET /api/available-slots</code>)</li>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px;">
+              <li>• Просмотр календаря свободных слотов (<code style="color: var(--g-blue); font-size: 21px;">GET /api/available-slots</code>)</li>
               <li>• Выбор специальности, формы обучения и даты визита</li>
-              <li>• Оформление онлайн-записи и получение талона (<code style="color: var(--g-blue); font-size: 19px;">POST /api/register</code>)</li>
-              <li>• Просмотр общей посещаемости портала (<code style="color: var(--g-blue); font-size: 19px;">GET /api/visitor-stats</code>)</li>
+              <li>• Оформление онлайн-записи и получение талона (<code style="color: var(--g-blue); font-size: 21px;">POST /api/register</code>)</li>
+              <li>• Просмотр общей посещаемости портала (<code style="color: var(--g-blue); font-size: 21px;">GET /api/visitor-stats</code>)</li>
             </ul>
           </td>
         </tr>
         <tr>
           <td>
-            <div style="font-size: 22px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Сотрудник комиссии</div>
+            <div style="font-size: 26px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">Сотрудник комиссии</div>
             <span class="role-pill admin">ROLE_ADMIN</span>
           </td>
           <td>
-            <div style="color: #ffffff; font-weight: 600; font-size: 21px;">JWT Bearer Token</div>
-            <div style="font-size: 18px; color: var(--text-muted); margin-top: 4px;">Логин / пароль с хешированием BCrypt</div>
+            <div style="color: #ffffff; font-weight: 600; font-size: 23px;">JWT Bearer Token</div>
+            <div style="font-size: 20px; color: var(--text-muted); margin-top: 6px;">Логин / пароль с хешированием BCrypt</div>
           </td>
           <td>
-            <ul style="list-style: none; display: flex; flex-direction: column; gap: 8px;">
-              <li>• Доступ к закрытой административной панели (<code style="color: var(--g-red); font-size: 19px;">/admin/dashboard</code>)</li>
-              <li>• Настройка дат приёма, шага времени и емкости слотов (<code style="color: var(--g-red); font-size: 19px;">/api/admin/slots</code>)</li>
-              <li>• Просмотр, поиск и смена статусов заявлений (<code style="color: var(--g-red); font-size: 19px;">/api/admin/applications</code>)</li>
-              <li>• Управление архивом и выгрузка отчётов в Excel XLSX (<code style="color: var(--g-red); font-size: 19px;">/api/admin/export</code>)</li>
+            <ul style="list-style: none; display: flex; flex-direction: column; gap: 10px;">
+              <li>• Доступ к закрытой административной панели (<code style="color: var(--g-red); font-size: 21px;">/admin/dashboard</code>)</li>
+              <li>• Настройка дат приёма, шага времени и емкости слотов (<code style="color: var(--g-red); font-size: 21px;">/api/admin/slots</code>)</li>
+              <li>• Просмотр, поиск и смена статусов заявлений (<code style="color: var(--g-red); font-size: 21px;">/api/admin/applications</code>)</li>
+              <li>• Управление архивом и выгрузка отчётов в Excel XLSX (<code style="color: var(--g-red); font-size: 21px;">/api/admin/export</code>)</li>
             </ul>
           </td>
         </tr>
@@ -767,104 +797,104 @@
 
   <div class="slide-content">
     <div class="card-grid-4">
-      <div class="m3-card border-blue">
-        <div class="card-icon-header">
-          <div class="m3-icon-box blue">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+      <div class="m3-card border-blue" style="padding: 24px 28px;">
+        <div class="card-icon-header" style="margin-bottom: 12px;">
+          <div class="m3-icon-box blue" style="width: 58px; height: 58px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
           </div>
           <div>
-            <div class="card-title">1. Онлайн-запись абитуриента</div>
-            <div style="font-size: 17px; color: var(--g-blue);">Публичный модуль сайта</div>
+            <div class="card-title" style="font-size: 26px;">1. Онлайн-запись абитуриента</div>
+            <div style="font-size: 18px; color: var(--g-blue);">Публичный модуль сайта</div>
           </div>
         </div>
-        <ul class="bullet-list">
-          <li class="bullet-item">
+        <ul class="bullet-list" style="gap: 10px;">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check blue">✓</span>
             <span>Динамический расчёт свободных слотов на основе лимитов рабочих мест;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check blue">✓</span>
             <span>Защита от овербукинга с помощью строгих транзакций базы данных;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check blue">✓</span>
-            <span>Генерация электронного подтверждения записи с кодом талона.</span>
+            <span>Генерация электронного подтверждения записи с уникальным кодом талона.</span>
           </li>
         </ul>
       </div>
 
-      <div class="m3-card border-green">
-        <div class="card-icon-header">
-          <div class="m3-icon-box green">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      <div class="m3-card border-green" style="padding: 24px 28px;">
+        <div class="card-icon-header" style="margin-bottom: 12px;">
+          <div class="m3-icon-box green" style="width: 58px; height: 58px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
           </div>
           <div>
-            <div class="card-title">2. Управление приёмом и расписанием</div>
-            <div style="font-size: 17px; color: var(--g-green);">Панель секретаря комиссии</div>
+            <div class="card-title" style="font-size: 26px;">2. Управление приёмом</div>
+            <div style="font-size: 18px; color: var(--g-green);">Панель секретаря комиссии</div>
           </div>
         </div>
-        <ul class="bullet-list">
-          <li class="bullet-item">
+        <ul class="bullet-list" style="gap: 10px;">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check green">✓</span>
-            <span>Гибкая настройка дней приёма, интервалов слотов (15, 20, 30 мин) и лимитов;</span>
+            <span>Гибкая настройка дней приёма, шага слотов (15, 20, 30 мин) и лимитов;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check green">✓</span>
             <span>Журнал заявлений: фильтрация по датам, ФИО, статусам («Ожидает», «Принят»);</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check green">✓</span>
             <span>Управление жизненным циклом заявки и отметка фактической явки.</span>
           </li>
         </ul>
       </div>
 
-      <div class="m3-card border-yellow">
-        <div class="card-icon-header">
-          <div class="m3-icon-box yellow">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+      <div class="m3-card border-yellow" style="padding: 24px 28px;">
+        <div class="card-icon-header" style="margin-bottom: 12px;">
+          <div class="m3-icon-box yellow" style="width: 58px; height: 58px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
           </div>
           <div>
-            <div class="card-title">3. Экспорт отчётов в Excel (XLSX)</div>
-            <div style="font-size: 17px; color: var(--g-yellow);">Apache POI 5.2.5</div>
+            <div class="card-title" style="font-size: 26px;">3. Экспорт отчётов в Excel (XLSX)</div>
+            <div style="font-size: 18px; color: var(--g-yellow);">Apache POI 5.2.5</div>
           </div>
         </div>
-        <ul class="bullet-list">
-          <li class="bullet-item">
+        <ul class="bullet-list" style="gap: 10px;">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check yellow">✓</span>
             <span>Формирование списков абитуриентов по ГОСТ для архива и комиссий;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check yellow">✓</span>
             <span>Генерация таблиц «на лету» без сохранения временных файлов на диске;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check yellow">✓</span>
             <span>Потоковая отдача файла клиенту через HTTP Content-Disposition.</span>
           </li>
         </ul>
       </div>
 
-      <div class="m3-card border-red">
-        <div class="card-icon-header">
-          <div class="m3-icon-box red">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
+      <div class="m3-card border-red" style="padding: 24px 28px;">
+        <div class="card-icon-header" style="margin-bottom: 12px;">
+          <div class="m3-icon-box red" style="width: 58px; height: 58px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM17 13l-5 5-5-5h3V9h4v4h3z"/></svg>
           </div>
           <div>
-            <div class="card-title">4. Автоматизированный архив и аудит</div>
-            <div style="font-size: 17px; color: var(--g-red);">Надёжность хранения данных</div>
+            <div class="card-title" style="font-size: 26px;">4. Архив и аудит операций</div>
+            <div style="font-size: 18px; color: var(--g-red);">Надёжность хранения данных</div>
           </div>
         </div>
-        <ul class="bullet-list">
-          <li class="bullet-item">
+        <ul class="bullet-list" style="gap: 10px;">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check red">✓</span>
             <span>Изоляция завершённых кампаний прошлых лет от текущих записей;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check red">✓</span>
             <span>Журналирование действий администраторов для соответствия 152-ФЗ;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check red">✓</span>
             <span>Мгновенный отклик аналитических запросов без деградации базы.</span>
           </li>
@@ -888,7 +918,7 @@
 </div>
 
 <!-- ========================================================================= -->
-<!-- СЛАЙД 6. СТЕК ТЕХНОЛОГИЙ И АРХИТЕКТУРА СИСТЕМЫ (НОВЫЙ СЛАЙД)              -->
+<!-- СЛАЙД 6. СТЕК ТЕХНОЛОГИЙ И АРХИТЕКТУРА СИСТЕМЫ                             -->
 <!-- ========================================================================= -->
 <div class="slide" id="slide-6">
   <div class="slide-header">
@@ -905,122 +935,122 @@
 
   <div class="slide-content">
     <div class="card-grid-4">
-      <div class="m3-card border-blue">
-        <div class="card-icon-header">
-          <div class="m3-icon-box blue">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg>
+      <div class="m3-card border-blue" style="padding: 24px 28px;">
+        <div class="card-icon-header" style="margin-bottom: 12px;">
+          <div class="m3-icon-box blue" style="width: 58px; height: 58px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l-5.5 9h11L12 2zm0 3.84L13.93 9h-3.87L12 5.84zM17.5 13c-2.49 0-4.5 2.01-4.5 4.5s2.01 4.5 4.5 4.5 4.5-2.01 4.5-4.5-2.01-4.5-4.5-4.5zm0 7c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zM3 21.5h8v-8H3v8zm2-6h4v4H5v-4z"/></svg>
           </div>
           <div>
-            <div class="card-title">Серверное ядро и Web-слой</div>
-            <div style="font-size: 17px; color: var(--g-blue);">Java 21 LTS & Spring Boot 3.3.5</div>
+            <div class="card-title" style="font-size: 26px;">Серверное ядро и Web-слой</div>
+            <div style="font-size: 18px; color: var(--g-blue);">Java 21 LTS & Spring Boot 3.3.5</div>
           </div>
         </div>
-        <ul class="bullet-list">
-          <li class="bullet-item">
+        <ul class="bullet-list" style="gap: 10px;">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check blue">✓</span>
-            <span><strong>Spring Web MVC:</strong> RESTful контроллеры с DTO-маппингом и глобальной обработкой исключений;</span>
+            <span><strong>Spring Web MVC:</strong> RESTful контроллеры с DTO-маппингом и глобальной обработкой ошибок;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check blue">✓</span>
             <span><strong>Jackson Databind:</strong> валидная сериализация JSON и поддержка стандарта дат ISO-8601;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check blue">✓</span>
             <span><strong>OpenAPI 3.0 / Swagger UI:</strong> интерактивная автодокументация всех эндпоинтов API;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check blue">✓</span>
             <span><strong>Maven 3.9:</strong> декларативное управление жизненным циклом сборки и зависимостями.</span>
           </li>
         </ul>
       </div>
 
-      <div class="m3-card border-green">
-        <div class="card-icon-header">
-          <div class="m3-icon-box green">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 4.02 2 6.5v11C2 19.98 6.48 22 12 22s10-2.02 10-4.5v-11C22 4.02 17.52 2 12 2zm0 2c4.41 0 8 1.4 8 2.5S16.41 9 12 9s-8-1.4-8-2.5S7.59 4 12 4zm8 13.5c0 1.1-3.59 2.5-8 2.5s-8-1.4-8-2.5V14.2c2.09 1.13 5.04 1.8 8 1.8s5.91-.67 8-1.8v3.3zm0-5c0 1.1-3.59 2.5-8 2.5s-8-1.4-8-2.5V9.2c2.09 1.13 5.04 1.8 8 1.8s5.91-.67 8-1.8v3.3z"/></svg>
+      <div class="m3-card border-green" style="padding: 24px 28px;">
+        <div class="card-icon-header" style="margin-bottom: 12px;">
+          <div class="m3-icon-box green" style="width: 58px; height: 58px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 4.02 2 6.5v11C2 19.98 6.48 22 12 22s10-2.02 10-4.5v-11C22 4.02 17.52 2 12 2zm0 2c4.41 0 8 1.4 8 2.5S16.41 9 12 9s-8-1.4-8-2.5S7.59 4 12 4zm8 13.5c0 1.1-3.59 2.5-8 2.5s-8-1.4-8-2.5V14.2c2.09 1.13 5.04 1.8 8 1.8s5.91-.67 8-1.8v3.3zm0-5c0 1.1-3.59 2.5-8 2.5s-8-1.4-8-2.5V9.2c2.09 1.13 5.04 1.8 8 1.8s5.91-.67 8-1.8v3.3z"/></svg>
           </div>
           <div>
-            <div class="card-title">Слой персистентности и СУБД</div>
-            <div style="font-size: 17px; color: var(--g-green);">PostgreSQL 16 & Spring Data JPA</div>
+            <div class="card-title" style="font-size: 26px;">Слой персистентности и СУБД</div>
+            <div style="font-size: 18px; color: var(--g-green);">PostgreSQL 16 & Spring Data JPA</div>
           </div>
         </div>
-        <ul class="bullet-list">
-          <li class="bullet-item">
+        <ul class="bullet-list" style="gap: 10px;">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check green">✓</span>
-            <span><strong>PostgreSQL 16:</strong> надёжная реляционная СУБД с полной гарантией ACID-транзакций;</span>
+            <span><strong>PostgreSQL 16:</strong> надёжная реляционная СУБД с гарантией ACID-транзакций;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check green">✓</span>
             <span><strong>Spring Data JPA & Hibernate 6.5:</strong> оптимизированное ORM и строго типизированные репозитории;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check green">✓</span>
             <span><strong>HikariCP:</strong> высокопроизводительный пул коннектов к базе с динамическим управлением;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check green">✓</span>
-            <span><strong>Индексы и ограничения:</strong> B-Tree индексы по датам и составные UNIQUE ограничения против дубликатов.</span>
+            <span><strong>Индексы и ключи:</strong> B-Tree индексы по датам и составные UNIQUE ограничения от дубликатов.</span>
           </li>
         </ul>
       </div>
 
-      <div class="m3-card border-yellow">
-        <div class="card-icon-header">
-          <div class="m3-icon-box yellow">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+      <div class="m3-card border-yellow" style="padding: 24px 28px;">
+        <div class="card-icon-header" style="margin-bottom: 12px;">
+          <div class="m3-icon-box yellow" style="width: 58px; height: 58px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
           </div>
           <div>
-            <div class="card-title">Безопасность и бизнес-сервисы</div>
-            <div style="font-size: 17px; color: var(--g-yellow);">Spring Security 6.3 & Apache POI</div>
+            <div class="card-title" style="font-size: 26px;">Безопасность и бизнес-сервисы</div>
+            <div style="font-size: 18px; color: var(--g-yellow);">Spring Security 6.3 & Apache POI</div>
           </div>
         </div>
-        <ul class="bullet-list">
-          <li class="bullet-item">
+        <ul class="bullet-list" style="gap: 10px;">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check yellow">✓</span>
             <span><strong>Spring Security 6.3:</strong> фильтрация запросов и Stateless JWT аутентификация (HMAC-SHA256);</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check yellow">✓</span>
             <span><strong>Ролевой контроль:</strong> аннотации @PreAuthorize для разделения прав ADMIN и APPLICANT;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check yellow">✓</span>
             <span><strong>Jakarta Bean Validation:</strong> строгая валидация входящих данных (JSR-380: RegEx, NotBlank);</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check yellow">✓</span>
-            <span><strong>Apache POI 5.2.5:</strong> генерация ведомостей и отчётов в формате Excel (XLSX).</span>
+            <span><strong>Apache POI 5.2.5:</strong> потоковая генерация ведомостей и отчётов в формате Excel (XLSX).</span>
           </li>
         </ul>
       </div>
 
-      <div class="m3-card border-red">
-        <div class="card-icon-header">
-          <div class="m3-icon-box red">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.89-2-2-2zm0 14H5V8h14v10z"/></svg>
+      <div class="m3-card border-red" style="padding: 24px 28px;">
+        <div class="card-icon-header" style="margin-bottom: 12px;">
+          <div class="m3-icon-box red" style="width: 58px; height: 58px;">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M19 4H5c-1.11 0-2 .9-2 2v12c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.89-2-2-2zm0 14H5V8h14v10z"/></svg>
           </div>
           <div>
-            <div class="card-title">Инфраструктура и развёртывание</div>
-            <div style="font-size: 17px; color: var(--g-red);">Docker, Nginx & Собственный сервер</div>
+            <div class="card-title" style="font-size: 26px;">Инфраструктура и развёртывание</div>
+            <div style="font-size: 18px; color: var(--g-red);">Docker, Nginx & Собственный сервер</div>
           </div>
         </div>
-        <ul class="bullet-list">
-          <li class="bullet-item">
+        <ul class="bullet-list" style="gap: 10px;">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check red">✓</span>
             <span><strong>Docker & Docker Compose:</strong> изоляция контейнеров бэкенда, базы данных и обратного прокси;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check red">✓</span>
-            <span><strong>Nginx Reverse Proxy:</strong> SSL/TLS терминация Let's Encrypt, HTTP/2 и Gzip сжатие;</span>
+            <span><strong>Nginx Reverse Proxy:</strong> SSL/TLS терминация Let's Encrypt, HTTP/2 и сжатие Gzip;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check red">✓</span>
             <span><strong>JUnit 5 & Mockito:</strong> юнит-тесты и интеграционные тесты контроллеров и репозиториев;</span>
           </li>
-          <li class="bullet-item">
+          <li class="bullet-item" style="font-size: 20px;">
             <span class="bullet-check red">✓</span>
-            <span><strong>Собственный сервер:</strong> непрерывное развёртывание и обслуживание на priem-konyaeva.ru.</span>
+            <span><strong>Собственный сервер:</strong> непрерывное обслуживание на домене priem-konyaeva.ru.</span>
           </li>
         </ul>
       </div>
@@ -1120,7 +1150,7 @@
           <td><strong>Пропускная способность (c = 70 потоков, пик)</strong></td>
           <td>111.90 запросов / сек</td>
           <td style="color: var(--g-green); font-weight: 700;">166.40 запросов / сек</td>
-          <td style="color: var(--g-blue); font-weight: 700; font-size: 24px;">+48.7% RPS</td>
+          <td style="color: var(--g-blue); font-weight: 700; font-size: 26px;">+48.7% RPS</td>
         </tr>
         <tr>
           <td><strong>Среднее время ответа (c = 70)</strong></td>
@@ -1137,8 +1167,8 @@
       </tbody>
     </table>
 
-    <div class="m3-card elevated" style="padding: 22px 30px;">
-      <div style="font-size: 21px; color: var(--text-secondary); line-height: 1.6;">
+    <div class="m3-card elevated" style="padding: 22px 32px;">
+      <div style="font-size: 22px; color: var(--text-secondary); line-height: 1.6;">
         <strong style="color: #ffffff;">Вывод по результатам измерений:</strong> при одиночных запросах разница стеков минимальна из-за накладных расходов сети. Однако при росте конкурентной нагрузки до <strong>70 параллельных клиентов</strong> (моделирование пика записи в 9:00) многопоточная модель Java Spring Boot обеспечивает <strong>прирост на +48.7% RPS</strong> за счёт отсутствия глобальной блокировки GIL и эффективного пула HikariCP.
       </div>
     </div>
@@ -1188,8 +1218,8 @@
             <span class="http-status">200 OK • 12 ms</span>
           </div>
 
-          <div style="font-size: 26px; font-weight: 700; color: #ffffff; margin-bottom: 12px;">Проверка учётных данных и выпуск токена</div>
-          <p style="font-size: 21px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 20px;">
+          <div style="font-size: 30px; font-weight: 700; color: #ffffff; margin-bottom: 14px;">Проверка учётных данных и выпуск токена</div>
+          <p style="font-size: 22px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 22px;">
             Эндпоинт аутентификации членов приёмной комиссии. При успешной проверке хеша пароля (BCrypt) сервер возвращает подписанный JWT токен доступа:
           </p>
 
@@ -1209,8 +1239,8 @@
           </ul>
         </div>
 
-        <div style="background: var(--g-surface-high); border-radius: 14px; padding: 18px; border: 1px solid var(--g-border); margin-top: 18px;">
-          <div style="font-family: var(--font-mono); font-size: 17px; color: var(--g-green);">
+        <div style="background: var(--g-surface-high); border-radius: 14px; padding: 18px; border: 1px solid var(--g-border); margin-top: 20px;">
+          <div style="font-family: var(--font-mono); font-size: 19px; color: var(--g-green);">
             ✓ Ответ сервера: {"access_token": "eyJhbGciOiJIUzI1Ni...", "token_type": "Bearer", "role": "ROLE_ADMIN"}
           </div>
         </div>
@@ -1262,8 +1292,8 @@
             <span class="http-status">201 CREATED • 18 ms</span>
           </div>
 
-          <div style="font-size: 26px; font-weight: 700; color: #ffffff; margin-bottom: 12px;">Оформление записи и транзакционная изоляция</div>
-          <p style="font-size: 21px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 20px;">
+          <div style="font-size: 30px; font-weight: 700; color: #ffffff; margin-bottom: 14px;">Оформление записи и транзакционная изоляция</div>
+          <p style="font-size: 22px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 22px;">
             Основной публичный эндпоинт онлайн-записи. Принимает персональные данные абитуриента, дату, желаемый слот и выбранную специальность:
           </p>
 
@@ -1274,7 +1304,7 @@
             </li>
             <li class="bullet-item">
               <span class="bullet-check green">✓</span>
-              <span><strong>Атомарность транзакции:</strong> проверка оставшихся мест и декремент слота внутри транзакции <code>@Transactional</code>;</span>
+              <span><strong>Атомарность транзакции:</strong> проверка оставшихся мест и декремент слота внутри <code>@Transactional</code>;</span>
             </li>
             <li class="bullet-item">
               <span class="bullet-check green">✓</span>
@@ -1283,8 +1313,8 @@
           </ul>
         </div>
 
-        <div style="background: var(--g-surface-high); border-radius: 14px; padding: 18px; border: 1px solid var(--g-border); margin-top: 18px;">
-          <div style="font-family: var(--font-mono); font-size: 17px; color: var(--g-green);">
+        <div style="background: var(--g-surface-high); border-radius: 14px; padding: 18px; border: 1px solid var(--g-border); margin-top: 20px;">
+          <div style="font-family: var(--font-mono); font-size: 19px; color: var(--g-green);">
             ✓ Ответ сервера: {"status": "success", "ticket_number": "T-2026-0814", "appointment_id": 412, "slot": "10:30"}
           </div>
         </div>
@@ -1336,8 +1366,8 @@
             <span class="http-status">200 OK • 30 ms</span>
           </div>
 
-          <div style="font-size: 26px; font-weight: 700; color: #ffffff; margin-bottom: 12px;">Работа с реестром поступающих</div>
-          <p style="font-size: 21px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 20px;">
+          <div style="font-size: 30px; font-weight: 700; color: #ffffff; margin-bottom: 14px;">Работа с реестром поступающих</div>
+          <p style="font-size: 22px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 22px;">
             Инструмент сотрудника приёмной комиссии для обработки потока документов. Поддерживает динамическую фильтрацию через Spring Data JPA:
           </p>
 
@@ -1352,13 +1382,13 @@
             </li>
             <li class="bullet-item">
               <span class="bullet-check yellow">✓</span>
-              <span><strong>Управление статусами:</strong> эндпоинт <code>PATCH /api/admin/applications/<built-in function id>/status</code> для фиксации явки.</span>
+              <span><strong>Управление статусами:</strong> эндпоинт <code>PATCH /api/admin/applications/{id}/status</code> для фиксации явки.</span>
             </li>
           </ul>
         </div>
 
-        <div style="background: var(--g-surface-high); border-radius: 14px; padding: 18px; border: 1px solid var(--g-border); margin-top: 18px;">
-          <div style="font-family: var(--font-mono); font-size: 17px; color: var(--g-green);">
+        <div style="background: var(--g-surface-high); border-radius: 14px; padding: 18px; border: 1px solid var(--g-border); margin-top: 20px;">
+          <div style="font-family: var(--font-mono); font-size: 19px; color: var(--g-green);">
             ✓ Ответ сервера: {"content": [...], "totalElements": 1284, "totalPages": 65, "size": 20, "number": 0}
           </div>
         </div>
@@ -1410,8 +1440,8 @@
             <span class="http-status">200 OK • 16 ms</span>
           </div>
 
-          <div style="font-size: 26px; font-weight: 700; color: #ffffff; margin-bottom: 12px;">Архивация и регламентное обслуживание</div>
-          <p style="font-size: 21px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 20px;">
+          <div style="font-size: 30px; font-weight: 700; color: #ffffff; margin-bottom: 14px;">Архивация и регламентное обслуживание</div>
+          <p style="font-size: 22px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 22px;">
             Модуль вывода исторических данных приёмных кампаний прошлых периодов. Обеспечивает выполнение требований архивного хранения:
           </p>
 
@@ -1431,8 +1461,8 @@
           </ul>
         </div>
 
-        <div style="background: var(--g-surface-high); border-radius: 14px; padding: 18px; border: 1px solid var(--g-border); margin-top: 18px;">
-          <div style="font-family: var(--font-mono); font-size: 17px; color: var(--g-green);">
+        <div style="background: var(--g-surface-high); border-radius: 14px; padding: 18px; border: 1px solid var(--g-border); margin-top: 20px;">
+          <div style="font-family: var(--font-mono); font-size: 19px; color: var(--g-green);">
             ✓ Ответ сервера: {"archivedCampaigns": [{"year": 2024, "totalApplicants": 2410, "status": "LOCKED"}]}
           </div>
         </div>
@@ -1475,11 +1505,11 @@
       <div class="m3-card elevated border-blue">
         <div class="card-icon-header">
           <div class="m3-icon-box blue">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
           </div>
           <div>
-            <div class="card-title">Криптографическая защита</div>
-            <div style="font-size: 16px; color: var(--g-blue);">BCrypt + JWT + SSL/TLS</div>
+            <div class="card-title" style="font-size: 28px;">Криптографическая защита</div>
+            <div style="font-size: 18px; color: var(--g-blue);">BCrypt + JWT + SSL/TLS</div>
           </div>
         </div>
         <div class="card-desc">
@@ -1488,7 +1518,7 @@
         <ul class="bullet-list">
           <li class="bullet-item">
             <span class="bullet-check blue">✓</span>
-            <span>Пароли администраторов защищены алгоритмом <strong>BCrypt с солью</strong> (10 раундов хеширования);</span>
+            <span>Пароли администраторов защищены алгоритмом <strong>BCrypt с солью</strong> (10 раундов);</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check blue">✓</span>
@@ -1504,11 +1534,11 @@
       <div class="m3-card elevated border-green">
         <div class="card-icon-header">
           <div class="m3-icon-box green">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm-2 16l-4-4 1.41-1.41L10 14.17l6.59-6.59L18 9l-8 8z"/></svg>
           </div>
           <div>
-            <div class="card-title">Валидация данных</div>
-            <div style="font-size: 16px; color: var(--g-green);">JSR-380 Jakarta Validation</div>
+            <div class="card-title" style="font-size: 28px;">Валидация данных</div>
+            <div style="font-size: 18px; color: var(--g-green);">JSR-380 Jakarta Validation</div>
           </div>
         </div>
         <div class="card-desc">
@@ -1525,7 +1555,7 @@
           </li>
           <li class="bullet-item">
             <span class="bullet-check green">✓</span>
-            <span>Единый обработчик ошибок <code>@RestControllerAdvice</code> с информативными кодами ответов.</span>
+            <span>Единый обработчик ошибок <code>@RestControllerAdvice</code> с информативными кодами.</span>
           </li>
         </ul>
       </div>
@@ -1533,11 +1563,11 @@
       <div class="m3-card elevated border-yellow">
         <div class="card-icon-header">
           <div class="m3-icon-box yellow">
-            <svg width="30" height="30" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM12 17l4-4h-3V9h-2v4H8l4 4z"/></svg>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM12 17l4-4h-3V9h-2v4H8l4 4z"/></svg>
           </div>
           <div>
-            <div class="card-title">Изоляция и отказоустойчивость</div>
-            <div style="font-size: 16px; color: var(--g-yellow);">Docker Compose + Nginx</div>
+            <div class="card-title" style="font-size: 28px;">Изоляция и стабильность</div>
+            <div style="font-size: 18px; color: var(--g-yellow);">Docker Compose + Nginx</div>
           </div>
         </div>
         <div class="card-desc">
@@ -1546,7 +1576,7 @@
         <ul class="bullet-list">
           <li class="bullet-item">
             <span class="bullet-check yellow">✓</span>
-            <span>Изолированные контейнеры бэкенда, базы данных PostgreSQL и обратного прокси Nginx;</span>
+            <span>Изолированные контейнеры бэкенда, базы данных PostgreSQL и Nginx;</span>
           </li>
           <li class="bullet-item">
             <span class="bullet-check yellow">✓</span>
@@ -1596,11 +1626,11 @@
       <div class="m3-card elevated border-green">
         <div class="card-icon-header">
           <div class="m3-icon-box green">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z"/></svg>
           </div>
           <div>
             <div class="card-title">Технические результаты перехода</div>
-            <div style="font-size: 18px; color: var(--g-green);">Итоги реализации Java Spring Boot ядра</div>
+            <div style="font-size: 20px; color: var(--g-green);">Итоги реализации Java Spring Boot ядра</div>
           </div>
         </div>
         <ul class="bullet-list">
@@ -1622,11 +1652,11 @@
       <div class="m3-card elevated border-blue">
         <div class="card-icon-header">
           <div class="m3-icon-box blue">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
           </div>
           <div>
             <div class="card-title">Практическая значимость для колледжа</div>
-            <div style="font-size: 18px; color: var(--g-blue);">Эффект внедрения системы в ГБПОУ ТО ТКК</div>
+            <div style="font-size: 20px; color: var(--g-blue);">Эффект внедрения системы в ГБПОУ ТО ТКК</div>
           </div>
         </div>
         <ul class="bullet-list">
@@ -1640,24 +1670,24 @@
           </li>
           <li class="bullet-item">
             <span class="bullet-check blue">✓</span>
-            <span><strong>Повышение прозрачности приёма:</strong> оперативный контроль явки и соблюдение санитарных норм.</span>
+            <span><strong>Повышение прозрачности приёма:</strong> оперативный контроль явки и соблюдение регламентов.</span>
           </li>
         </ul>
       </div>
     </div>
 
-    <div class="m3-card elevated border-yellow" style="flex-direction: row; align-items: center; justify-content: space-between; padding: 22px 36px;">
-      <div style="display: flex; align-items: center; gap: 20px;">
+    <div class="m3-card elevated border-yellow" style="flex-direction: row; align-items: center; justify-content: space-between; padding: 24px 38px;">
+      <div style="display: flex; align-items: center; gap: 24px;">
         <div class="m3-icon-box yellow">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>
         </div>
         <div>
-          <div style="font-size: 26px; font-weight: 700; color: #ffffff;">Статус проекта: Готов к промышленной эксплуатации</div>
-          <div style="font-size: 20px; color: var(--text-secondary); margin-top: 4px;">Действующий сервер: <strong style="color: var(--g-blue);">https://priem-konyaeva.ru</strong> • Исходный код доступен на GitHub</div>
+          <div style="font-size: 28px; font-weight: 700; color: #ffffff;">Статус проекта: Готов к промышленной эксплуатации</div>
+          <div style="font-size: 22px; color: var(--text-secondary); margin-top: 4px;">Действующий сервер: <strong style="color: var(--g-blue);">https://priem-konyaeva.ru</strong> • Исходный код доступен на GitHub</div>
         </div>
       </div>
       <div style="text-align: right;">
-        <span class="slide-chip green" style="font-size: 18px; padding: 10px 24px;">✓ Готов к защите</span>
+        <span class="slide-chip green" style="font-size: 20px; padding: 12px 28px;">✓ Готов к защите</span>
       </div>
     </div>
   </div>
@@ -1676,5 +1706,17 @@
   </div>
 </div>
 
+<script>
+  // Полноэкранный режим и масштабирование по клавише F / клику
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'f' || e.key === 'F' || e.key === 'а' || e.key === 'А') {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+  });
+</script>
 </body>
 </html>
